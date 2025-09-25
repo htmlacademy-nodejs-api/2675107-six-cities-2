@@ -8,6 +8,11 @@ export class ImportCommand implements Command {
 
   public execute(...parameters: string[]): void {
     const [filename] = parameters;
+
+    if(!filename) {
+      console.log('Файла не передан');
+      return;
+    }
     const fileReader = new TSVFileReader(filename.trim());
 
     try {

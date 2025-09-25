@@ -1,4 +1,3 @@
-#!/nvm4w/nodejs/node
 
 import { CLIApplication, HelpCommand, ImportCommand, VersionCommand } from './cli/index.js';
 
