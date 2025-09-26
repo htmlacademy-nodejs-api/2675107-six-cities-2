@@ -6,7 +6,7 @@ export class ImportCommand implements Command {
     return '--import';
   }
 
-  public execute(...parameters: string[]): void {
+  public async execute(...parameters: string[]): Promise<void> {
     const [filename] = parameters;
 
     if(!filename) {

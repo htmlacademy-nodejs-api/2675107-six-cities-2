@@ -62,7 +62,7 @@ export class TSVFileReader implements FileReader {
             postDate: new Date(createdDate),
             city,
             previewImage: previewImage.trim(),
-            photos: Array(6).fill(previewImage.trim()), // 6 одинаковых фото
+            photos: Array(6).fill(previewImage.trim()),
             isPremium: false,
             isFavorite: false,
             rating: 4.0,
