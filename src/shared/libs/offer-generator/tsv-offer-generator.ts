@@ -15,6 +15,7 @@ export class TSVOfferGenerator implements OfferGenerator {
     const firstname = getRandomItem(this.mockData.users);
     const email = getRandomItem(this.mockData.emails);
     const avatarPath = getRandomItem(this.mockData.avatars);
+    const userType = getRandomItem(this.mockData.userTypes);
 
     const isPremium = Math.random() > 0.5;
     const isFavorite = Math.random() > 0.5;
@@ -38,6 +39,7 @@ export class TSVOfferGenerator implements OfferGenerator {
       firstname,
       email,
       avatarPath,
+      userType,
       isPremium,
       isFavorite,
       rating,

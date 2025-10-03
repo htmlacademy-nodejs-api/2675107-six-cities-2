@@ -1,4 +1,4 @@
-import { RentalOffer, User, City } from '../types/index.js';
+import { RentalOffer, User, City, PropertyType, Amenities, UserType, CityName } from '../types/index.js';
 
 export function createOffer(offerData: string): RentalOffer {
   const [
@@ -11,6 +11,7 @@ export function createOffer(offerData: string): RentalOffer {
     firstname,
     email,
     avatarPath,
+    userType,
     isPremium,
     isFavorite,
     rating,
@@ -20,7 +21,7 @@ export function createOffer(offerData: string): RentalOffer {
     amenities
   ] = offerData.replace('\n', '').split('\t');
 
-  const cities: Record<string, City> = {
+  const cities: Record<CityName, City> = {
     Paris : { name: 'Paris', latitude: 48.85661, longitude: 2.351499 },
     Cologne: { name: 'Cologne', latitude: 50.938361, longitude: 6.959974 },
     Brussels: { name: 'Brussels', latitude: 50.846557, longitude: 4.351697 },
@@ -34,10 +35,9 @@ export function createOffer(offerData: string): RentalOffer {
     email: email.trim(),
     avatarPath: avatarPath?.trim() || 'default-avatar.jpg',
     password: 'default123', // дефолтный пароль
-    userType: 'ordinary'
+    userType: userType as UserType,
   };
-
-  const city: City = cities[cityName] || {
+  const city: City = cities[cityName as CityName] || {
     name: cityName,
     latitude: 0,
     longitude: 0,
@@ -53,11 +53,11 @@ export function createOffer(offerData: string): RentalOffer {
     isPremium: isPremium === 'true',
     isFavorite: isFavorite === 'true',
     rating: Number(rating),
-    propertyType: propertyType as RentalOffer['propertyType'],
+    propertyType: propertyType as PropertyType,
     rooms: Number(rooms),
     guests: Number(guests),
     price: Number(price),
-    amenities: amenities.split(';') as RentalOffer['amenities'],
+    amenities: amenities.split(';') as Amenities[],
     author: user,
     commentsCount: 0,
     coordinates: {
