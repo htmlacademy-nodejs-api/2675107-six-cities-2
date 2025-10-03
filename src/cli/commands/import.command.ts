@@ -10,9 +10,13 @@ import { MongoDatabaseClient } from '../../shared/libs/database-client/mongo.dat
 import { UserModel } from '../../shared/modules/user/user.entity.js';
 import { RentalOffer } from '../../shared/types/rental-offer.type.js';
 import { DEFAULT_DB_PORT} from './command.constant.js';
+import { CityService } from '../../shared/modules/city/city-service.interface.js';
+import { CityModel } from '../../shared/modules/city/city.entity.js';
+import { DefaultCityService } from '../../shared/modules/city/default-city.service.js';
 
 export class ImportCommand implements Command {
   private userService: UserService;
+  private cityService: CityService;
   private databaseClient: DatabaseClient;
   private logger: Logger;
   private salt: string;
@@ -23,6 +27,7 @@ export class ImportCommand implements Command {
 
     this.logger = new PinoLogger();
     this.userService = new DefaultUserService(this.logger, UserModel);
+    this.cityService = new DefaultCityService(this.logger, CityModel);
     this.databaseClient = new MongoDatabaseClient(this.logger);
   }
 
@@ -45,10 +50,14 @@ export class ImportCommand implements Command {
 
   private async saveOffer(offer: RentalOffer) {
 
-    const user = await this.userService.findOrCreate({
+    await this.userService.findOrCreate({
       ...offer.author,
       avatarPath: offer.author.avatarPath || '',
     }, this.salt);
+
+    await this.cityService.findOrCreate({
+      ...offer.city,
+    });
   }
 
   public async execute(filename: string, login: string, password: string, host: string, dbname: string, salt: string): Promise<void> {
