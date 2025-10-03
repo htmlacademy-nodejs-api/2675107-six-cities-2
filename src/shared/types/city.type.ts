@@ -1,5 +1,7 @@
+export type CityName = 'Paris' | 'Cologne' | 'Brussels' | 'Amsterdam' | 'Hamburg' | 'Dusseldorf';
+
 export type City = {
-  name: 'Paris' | 'Cologne' | 'Brussels' | 'Amsterdam' | 'Hamburg' | 'Dusseldorf';
+  name: CityName;
   latitude: number;
   longitude: number;
 };

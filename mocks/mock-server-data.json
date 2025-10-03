@@ -50,6 +50,7 @@
       "cologne-avatar.jpg",
       "dusseldorf-avatar.png"
     ],
+    "userTypes": ["ordinary", "pro"],
     "propertyTypes": ["apartment", "house", "room", "hotel"],
     "amenities": [
       "Breakfast",

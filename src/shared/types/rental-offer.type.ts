@@ -1,6 +1,10 @@
 import { User } from './user.type.js';
 import { City } from './city.type.js';
 
+export type Amenities = 'Breakfast' | 'Air conditioning' | 'Laptop friendly workspace' | 'Baby seat' | 'Washer' | 'Towels' | 'Fridge';
+
+export type PropertyType = 'apartment' | 'house' | 'room' | 'hotel';
+
 export type RentalOffer = {
   title: string; // Наименование (10-100 символов)
   description: string; // Описание (20-1024 символа)
@@ -11,11 +15,11 @@ export type RentalOffer = {
   isPremium: boolean; // Флаг премиум
   isFavorite: boolean; // Флаг избранного
   rating: number; // 1-5, число с одной цифрой после запятой
-  propertyType: 'apartment' | 'house' | 'room' | 'hotel'; // Тип жилья
+  propertyType: PropertyType; // Тип жилья
   rooms: number; // Кол-во комнат (1-8)
   guests: number; // Кол-во гостей (1-10)
   price: number; // Стоимость аренды (100-100000)
-  amenities: Array<'Breakfast' | 'Air conditioning' | 'Laptop friendly workspace' | 'Baby seat' | 'Washer' | 'Towels' | 'Fridge'>;
+  amenities: Amenities[];
   author: User; // Автор предложения
   commentsCount: number; // Количество комментариев (авто)
   coordinates: { latitude: number; longitude: number }; // Координаты
