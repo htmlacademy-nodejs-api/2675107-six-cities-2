@@ -13,10 +13,14 @@ import { DEFAULT_DB_PORT} from './command.constant.js';
 import { CityService } from '../../shared/modules/city/city-service.interface.js';
 import { CityModel } from '../../shared/modules/city/city.entity.js';
 import { DefaultCityService } from '../../shared/modules/city/default-city.service.js';
+import { OfferService } from '../../shared/modules/offer/offer-service.interface.js';
+import { OfferModel } from '../../shared/modules/offer/offer.entity.js';
+import { DefaultOfferService } from '../../shared/modules/offer/default-offer.service.js';
 
 export class ImportCommand implements Command {
   private userService: UserService;
   private cityService: CityService;
+  private offerService: OfferService;
   private databaseClient: DatabaseClient;
   private logger: Logger;
   private salt: string;
@@ -28,6 +32,7 @@ export class ImportCommand implements Command {
     this.logger = new PinoLogger();
     this.userService = new DefaultUserService(this.logger, UserModel);
     this.cityService = new DefaultCityService(this.logger, CityModel);
+    this.offerService = new DefaultOfferService(this.logger, OfferModel);
     this.databaseClient = new MongoDatabaseClient(this.logger);
   }
 
@@ -50,13 +55,36 @@ export class ImportCommand implements Command {
 
   private async saveOffer(offer: RentalOffer) {
 
-    await this.userService.findOrCreate({
+    const user = await this.userService.findOrCreate({
       ...offer.author,
       avatarPath: offer.author.avatarPath || '',
     }, this.salt);
 
-    await this.cityService.findOrCreate({
+    const city = await this.cityService.findOrCreate({
       ...offer.city,
+    });
+
+    await this.offerService.create({
+      title: offer.title,
+      description: offer.description,
+      postDate: offer.postDate,
+      city: city.name,
+      previewImage: offer.previewImage,
+      photos: offer.photos,
+      isPremium: offer.isPremium,
+      isFavorite: offer.isFavorite,
+      rating: offer.rating,
+      propertyType: offer.propertyType,
+      rooms: offer.rooms,
+      guests: offer.guests,
+      price: offer.price,
+      amenities: offer.amenities,
+      userId: user.id,
+      commentsCount: offer.commentsCount,
+      coordinates: {
+        latitude: city.latitude,
+        longitude: city.longitude
+      }
     });
   }
 
