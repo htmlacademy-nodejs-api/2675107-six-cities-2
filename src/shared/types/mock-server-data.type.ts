@@ -7,6 +7,7 @@ export type MockServerData = {
   users: string[];
   emails: string[];
   avatars: string[];
+  userTypes: Array<'ordinary' | 'pro'>;
   propertyTypes: Array<'apartment' | 'house' | 'room' | 'hotel'>;
   amenities: Array<'Breakfast' | 'Air conditioning' | 'Laptop friendly workspace' | 'Baby seat' | 'Washer' | 'Towels' | 'Fridge'>;
 };
