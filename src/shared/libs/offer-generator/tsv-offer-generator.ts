@@ -18,7 +18,6 @@ export class TSVOfferGenerator implements OfferGenerator {
     const userType = getRandomItem(this.mockData.userTypes);
 
     const isPremium = Math.random() > 0.5;
-    const isFavorite = Math.random() > 0.5;
     const rating = (Math.random() * 4 + 1).toFixed(1); // от 1.0 до 5.0
     const propertyType = getRandomItem(this.mockData.propertyTypes);
     const rooms = generateRandomValue(1, 8);
@@ -41,7 +40,6 @@ export class TSVOfferGenerator implements OfferGenerator {
       avatarPath,
       userType,
       isPremium,
-      isFavorite,
       rating,
       propertyType,
       rooms,

@@ -13,7 +13,6 @@ export type RentalOffer = {
   previewImage: string; // Превью изображения
   photos: string[]; // Всегда 6 фото
   isPremium: boolean; // Флаг премиум
-  isFavorite: boolean; // Флаг избранного
   rating: number; // 1-5, число с одной цифрой после запятой
   propertyType: PropertyType; // Тип жилья
   rooms: number; // Кол-во комнат (1-8)

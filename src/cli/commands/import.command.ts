@@ -16,11 +16,15 @@ import { DefaultCityService } from '../../shared/modules/city/default-city.servi
 import { OfferService } from '../../shared/modules/offer/offer-service.interface.js';
 import { OfferModel } from '../../shared/modules/offer/offer.entity.js';
 import { DefaultOfferService } from '../../shared/modules/offer/default-offer.service.js';
+import { UserOfferFavoriteService } from '../../shared/modules/user-offer-favorite/user-offer-favorite-service.interface.js';
+import { DefaultUserOfferFavoriteService } from '../../shared/modules/user-offer-favorite/default-user-offer-favorite.service.js';
+import { UserOfferFavoriteModel } from '../../shared/modules/user-offer-favorite/user-offer-favorite.entity.js';
 
 export class ImportCommand implements Command {
   private userService: UserService;
   private cityService: CityService;
   private offerService: OfferService;
+  private UserOfferFavoriteService: UserOfferFavoriteService;
   private databaseClient: DatabaseClient;
   private logger: Logger;
   private salt: string;
@@ -33,6 +37,7 @@ export class ImportCommand implements Command {
     this.userService = new DefaultUserService(this.logger, UserModel);
     this.cityService = new DefaultCityService(this.logger, CityModel);
     this.offerService = new DefaultOfferService(this.logger, OfferModel);
+    this.UserOfferFavoriteService = new DefaultUserOfferFavoriteService(this.logger, UserOfferFavoriteModel);
     this.databaseClient = new MongoDatabaseClient(this.logger);
   }
 
@@ -72,7 +77,6 @@ export class ImportCommand implements Command {
       previewImage: offer.previewImage,
       photos: offer.photos,
       isPremium: offer.isPremium,
-      isFavorite: offer.isFavorite,
       rating: offer.rating,
       propertyType: offer.propertyType,
       rooms: offer.rooms,
@@ -85,6 +89,11 @@ export class ImportCommand implements Command {
         latitude: city.latitude,
         longitude: city.longitude
       }
+    });
+
+    await this.UserOfferFavoriteService.createIfNotExists({
+      userId: '68e37958ed3dd2ede3818ef9',
+      offerId: '68e37958ed3dd2ede3818efb'
     });
   }
 
