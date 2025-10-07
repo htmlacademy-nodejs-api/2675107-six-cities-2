@@ -10,7 +10,7 @@
   "main": "main.js",
   "scripts": {
     "start": "npm run build && node ./dist/main.rest.js",
-    "dev": "npm run ts ./src/main.rest.ts | pino-pretty --colorize --translateTime SYS:standard",
+    "dev": "nodemon",
     "build": "npm run clean && npm run compile",
     "lint": "eslint src/ --ext .ts",
     "compile": "tsc -p tsconfig.json",
@@ -27,6 +27,7 @@
     "eslint": "8.49.0",
     "eslint-config-htmlacademy": "9.1.1",
     "json-server": "^0.17.4",
+    "nodemon": "^3.1.10",
     "pino-pretty": "^10.3.1",
     "rimraf": "5.0.1",
     "ts-node": "10.9.1",
