@@ -10,5 +10,7 @@ export const Component = {
   OfferService: Symbol.for('OfferService'),
   OfferModel: Symbol.for('OfferModel'),
   UserOfferFavoriteService: Symbol.for('UserOfferFavoriteService'),
-  UserOfferFavoriteModel: Symbol.for('UserOfferFavoriteModel')
+  UserOfferFavoriteModel: Symbol.for('UserOfferFavoriteModel'),
+  CommentService: Symbol.for('CommentService'),
+  CommentModel: Symbol.for('CommentModel'),
 } as const;
