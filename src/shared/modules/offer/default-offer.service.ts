@@ -25,10 +25,15 @@ export class DefaultOfferService implements OfferService {
     return this.offerModel.findById(offerId).exec();
   }
 
-  public async find(): Promise<DocumentType<OfferEntity>[]> {
+  public async find(limit?: number): Promise<DocumentType<OfferEntity>[]> {
+    const defaultLimit = 60;
+    const finalLimit = limit && limit > 0 ? limit : defaultLimit;
+
     return this.offerModel
       .find()
-      .populate(['userId'])
+      .select('_id title postDate city previewImage isPremium rating propertyType price commentsCount')
+      .sort({ postDate: SortType.Down })
+      .limit(finalLimit)
       .exec();
   }
 
@@ -41,15 +46,6 @@ export class DefaultOfferService implements OfferService {
   public async updateById(offerId: string, dto: UpdateOfferDto): Promise<DocumentType<OfferEntity> | null> {
     return this.offerModel
       .findByIdAndUpdate(offerId, dto, {new: true})
-      .populate(['userId'])
-      .exec();
-  }
-
-  public async findNew(count: number): Promise<DocumentType<OfferEntity>[]> {
-    return this.offerModel
-      .find()
-      .sort({ createdAt: SortType.Down })
-      .limit(count)
       .populate(['userId'])
       .exec();
   }
