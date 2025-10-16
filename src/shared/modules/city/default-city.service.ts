@@ -6,7 +6,6 @@ import { DocumentType, types } from '@typegoose/typegoose';
 import { CityEntity } from './city.entity.js';
 import { CreateCityDto } from './dto/create-city.dto.js';
 
-
 @injectable()
 export class DefaultCityService implements CityService{
   constructor(

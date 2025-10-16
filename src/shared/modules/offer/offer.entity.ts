@@ -21,7 +21,7 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   @prop({ trim: true })
   public description: string;
 
-  @prop()
+  @prop({required: true})
   public postDate: Date;
 
   @prop({
@@ -39,7 +39,7 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   @prop()
   public isPremium: boolean;
 
-  @prop()
+  @prop({required: true})
   public rating: number;
 
   @prop({
@@ -69,7 +69,7 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   })
   public userId: Ref<UserEntity>;
 
-  @prop({default: 0})
+  @prop({required: true,})
   public commentsCount: number;
 
   @prop({
