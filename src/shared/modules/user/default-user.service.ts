@@ -14,6 +14,7 @@ export class DefaultUserService implements UserService {
   ) {}
 
   public async create(dto: CreateUserDto, salt: string): Promise<DocumentType<UserEntity>> {
+
     const user = new UserEntity(dto);
     user.setPassword(dto.password, salt);
 
@@ -35,5 +36,43 @@ export class DefaultUserService implements UserService {
     }
 
     return this.create(dto, salt);
+  }
+
+  public async login(email: string, password: string, salt: string): Promise<DocumentType<UserEntity> | null> {
+    const user = await this.findByEmail(email);
+
+    if (!user) {
+      this.logger.warn(`Login failed: user ${email} not found`);
+      return null;
+    }
+
+    const isPasswordValid = user.comparePassword(password, salt);
+
+    if (!isPasswordValid) {
+      this.logger.warn(`Login failed: invalid password for ${email}`);
+      return null;
+    }
+
+    this.logger.info(`User ${email} successfully logged in`);
+    return user;
+  }
+
+  public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity> | false> {
+    if (!userId) {
+      return false;
+    }
+
+    try {
+      const user = await this.userModel.findById(userId).exec();
+
+      if (!user) {
+        return false;
+      }
+      return user;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to check authorization for user ${userId}: ${msg}`);
+      return false;
+    }
   }
 }
