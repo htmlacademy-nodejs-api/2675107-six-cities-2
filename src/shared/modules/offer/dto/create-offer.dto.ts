@@ -13,4 +13,5 @@ export class CreateOfferDto {
   public guests: number;
   public price: number;
   public amenities: Amenities[];
+  public coordinates: { latitude: number; longitude: number };
 }

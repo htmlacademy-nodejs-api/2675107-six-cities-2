@@ -33,12 +33,8 @@ export class DefaultOfferService implements OfferService {
       ...dto,
       postDate: new Date(),
       userId: userId,
-      rating: 5.0,
+      rating: 0.0,
       commentsCount: 0,
-      coordinates: {
-        latitude: city.latitude,
-        longitude: city.longitude,
-      },
     };
 
     const result = await this.offerModel.create(offerData);

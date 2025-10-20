@@ -9,7 +9,7 @@ import { createCityContainer } from './shared/modules/city/city.container.js';
 import { createUserOfferFavoriteContainer } from './shared/modules/user-offer-favorite/user-offer-favorite.container.js';
 import { createCommentContainer } from './shared/modules/comment/comment.container.js';
 // import { DefaultCommentService } from './shared/modules/comment/default-comment.service.js';
-// import { DefaultOfferService } from './shared/modules/offer/index.js';
+import { DefaultOfferService } from './shared/modules/offer/index.js';
 // import { DefaultUserOfferFavoriteService } from './shared/modules/user-offer-favorite/default-user-offer-favorite.service.js';
 
 async function bootstrap() {
@@ -24,7 +24,7 @@ async function bootstrap() {
 
   const application = appContainer.get<RestApplication>(Component.RestApplication);
   // const commentService = appContainer.get<DefaultCommentService>(Component.CommentService);
-  // const offerService = appContainer.get<DefaultOfferService>(Component.OfferService);
+  const offerService = appContainer.get<DefaultOfferService>(Component.OfferService);
   // const userFavoriteService = appContainer.get<DefaultUserOfferFavoriteService>(Component.UserOfferFavoriteService);
   // const userService = appContainer.get<DefaultUserService>(Component.UserService);
   await application.init();
@@ -105,19 +105,23 @@ async function bootstrap() {
   // console.log(res);
 
   //=============== CREATE ==============
-  // await offerService.create({
-  //   title: 'кАЙФАРИК',
-  //   description: 'КАЙФАРИК описание',
-  //   city: 'Amsterdam',
-  //   previewImage: 'afa.jpg',
-  //   photos: ['1.png','1.png','1.png','1.png','1.png','1.png'],
-  //   isPremium: true,
-  //   propertyType: 'apartment',
-  //   rooms: 5,
-  //   guests: 3,
-  //   price: 50000,
-  //   amenities: ['Air conditioning', 'Baby seat'],
-  // }, '68e386d2900a7f2da4ee5fd3');
+  await offerService.create({
+    title: 'Оффер с координатами',
+    description: 'КАЙФАРИК описание',
+    city: 'Amsterdam',
+    previewImage: 'afa.jpg',
+    photos: ['1.png','1.png','1.png','1.png','1.png','1.png'],
+    isPremium: true,
+    propertyType: 'apartment',
+    rooms: 5,
+    guests: 3,
+    price: 50000,
+    amenities: ['Air conditioning', 'Baby seat'],
+    coordinates: {
+      latitude: 51,
+      longitude: 59
+    }
+  }, '68e386d2900a7f2da4ee5fd3');
 
   //=============== FIND ==============
   // const offerFind = await offerService.find(15, '68e386d2900a7f2da4ee5fbe');
