@@ -52,11 +52,12 @@ export class DefaultCommentService implements CommentService {
       .populate('userId');
   }
 
-  public async deleteByOfferId(offerId: string): Promise<number> {
+  public async deleteByOfferId(offerId: string): Promise<string> {
     const result = await this.commentModel
       .deleteMany({offerId})
       .exec();
 
-    return result.deletedCount;
+    this.logger.info(`Комментарии для поста ${offerId} удаленны успешно`);
+    return `Удаленно ${result.deletedCount} комментариев поста`;
   }
 }

@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { BaseController, HttpError, HttpMethod } from '../../libs/express/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
@@ -11,7 +11,6 @@ import { StatusCodes } from 'http-status-codes';
 import { fillDTO } from '../../helpers/common.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { LoginUserRequest } from './request/login-user-request.type.js';
-import { isAuthorizedUserRequest } from './request/is-auth-user-request.type.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -55,10 +54,11 @@ export class UserController extends BaseController {
   }
 
   public async isAuthorized (
-    { body }: isAuthorizedUserRequest,
+    req: Request,
     res: Response,
   ): Promise<void> {
-    const result = await this.userService.isAuthorized(body.userId);
+    const user = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const result = await this.userService.isAuthorized(user);
     this.ok(res, result);
   }
 }

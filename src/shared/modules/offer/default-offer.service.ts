@@ -8,6 +8,8 @@ import { CreateOfferDto } from './dto/create-offer.dto.js';
 import { UpdateOfferDto } from './dto/update-offer.dto.js';
 import { PipelineStage, Types } from 'mongoose';
 import { CityService } from '../city/city-service.interface.js';
+import { HttpError } from '../../libs/express/index.js';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class DefaultOfferService implements OfferService {
@@ -19,10 +21,6 @@ export class DefaultOfferService implements OfferService {
 
   public async create(dto: CreateOfferDto, userId: string): Promise<DocumentType<OfferEntity>> {
 
-    if (!userId) {
-      this.logger.error('Unauthorized offer creation attempt', new Error('User not authorized'));
-      throw new Error('User not authorized');
-    }
     const offerData = {
       ...dto,
       postDate: new Date(),
@@ -32,36 +30,66 @@ export class DefaultOfferService implements OfferService {
     };
 
     const result = await this.offerModel.create(offerData);
-    this.logger.info(`New offer created: ${dto.title}`);
 
+    this.logger.info(`New offer created: ${dto.title}`);
     return result;
   }
 
-  public async findById(offerId: string): Promise<DocumentType<OfferEntity>> {
-    try {
-      const offer = await this.offerModel.findById(offerId).exec();
+  public async findById(offerId: string, userId?: string): Promise<DocumentType<OfferEntity>> {
 
-      if (!offer) {
-        this.logger.warn(`Offer with id ${offerId} not found`);
-        throw new Error(`Offer with id "${offerId}" not found`);
-      }
+    const offerObjId = new Types.ObjectId(offerId);
 
-      return offer;
-    } catch (error: unknown) {
-      let errorMessage: string;
+    const pipeline: PipelineStage[] = [
+      { $match: { _id: offerObjId } }
+    ];
 
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else {
-        errorMessage = 'Unknown error';
-      }
+    if (userId && Types.ObjectId.isValid(userId)) {
+      const userObjId = new Types.ObjectId(userId);
 
-      this.logger.error(`Failed to find offer ${offerId}: ${errorMessage}`);
-
-      throw new Error(`Failed to find offer ${offerId}: ${errorMessage}`);
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'user-offer-favorite',
+            let: { offerId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$offerId', '$$offerId'] },
+                      { $eq: ['$userId', userObjId] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: 'favoriteInfo'
+          }
+        },
+        {
+          $addFields: {
+            isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+          }
+        },
+        {
+          $project: { favoriteInfo: 0 }
+        }
+      );
     }
+
+    const result = await this.offerModel.aggregate(pipeline).exec();
+
+    if (!result || result.length === 0) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND,
+        'OfferById not found.',
+        'OfferController'
+      );
+    }
+    const offer = result[0];
+
+    this.logger.info(`Offer ${offer.title} show`);
+    return offer;
   }
 
   public async find(limit?: number, userId?: string): Promise<DocumentType<OfferEntity>[]> {
@@ -116,82 +144,61 @@ export class DefaultOfferService implements OfferService {
   }
 
 
-  public async deleteById(offerId: string, userId: string): Promise<DocumentType<OfferEntity> | null> {
-    try {
-      const offer = await this.offerModel.findById(offerId).exec();
+  public async deleteById(offerId: string, userId: string): Promise<string> {
 
-      if (!offer) {
-        this.logger.warn(`Offer with id ${offerId} not found`);
-        throw new Error(`Offer with id "${offerId}" not found`);
-      }
+    const offer = await this.offerModel.findById(offerId).exec();
 
-      if (offer.userId.toString() !== userId.toString()) {
-        this.logger.warn(`User ${userId} tried to delete offer not belonging to them`);
-        throw new Error('You are not allowed to delete this offer');
-      }
-
-      const deletedOffer = await this.offerModel.findByIdAndDelete(offerId).exec();
-
-      this.logger.info(`Offer with id ${offerId} deleted by user ${userId}`);
-
-      return deletedOffer;
-    } catch (error: unknown) {
-      let errorMessage: string;
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else {
-        errorMessage = 'Unknown error';
-      }
-
-      this.logger.error(`Failed to deleted offer ${offerId}: ${errorMessage}`);
-
-      throw new Error(`Failed to deleted offer ${offerId}: ${errorMessage}`);
+    if (!offer) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND,
+        'Offer not found for delete.',
+        'OfferController'
+      );
     }
+
+    if (offer.userId.toString() !== userId.toString()) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'You can only delete your own sentences.',
+        'OfferController'
+      );
+    }
+
+    await this.offerModel.findByIdAndDelete(offerId).exec();
+
+    this.logger.info(`Offer with id ${offerId} deleted by user ${userId}`);
+
+    return 'Предложение удалено ';
+
   }
 
   public async updateById(offerId: string, dto: UpdateOfferDto, userId: string): Promise<DocumentType<OfferEntity> | null> {
 
-    try {
-      const existingOffer = await this.offerModel.findById(offerId).exec();
+    const existingOffer = await this.offerModel.findById(offerId).exec();
 
-      if (!existingOffer) {
-        this.logger.warn(`Offer with id ${offerId} not found`);
-        throw new Error(`Offer with id "${offerId}" not found`);
-      }
-
-      if (existingOffer.userId.toString() !== userId.toString()) {
-        this.logger.warn(
-          `User ${userId} tried to edit offer ${offerId} belonging to ${existingOffer.userId}`
-        );
-        throw new Error('You are not allowed to edit this offer');
-      }
-
-      const updatedOffer = await this.offerModel
-        .findByIdAndUpdate(offerId, dto, { new: true })
-        .populate(['userId'])
-        .exec();
-
-      this.logger.info(`Offer ${offerId} successfully updated by user ${userId}`);
-      return updatedOffer;
-
-    } catch (error: unknown) {
-      let errorMessage: string;
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else {
-        errorMessage = 'Unknown error';
-      }
-
-      this.logger.error(`Failed to update offer ${offerId}: ${errorMessage}`);
-
-      throw new Error(`Failed to update offer ${offerId}: ${errorMessage}`);
+    if (!existingOffer) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND,
+        'Offer not found for UPDATE.',
+        'OfferController'
+      );
     }
+
+    if (existingOffer.userId.toString() !== userId.toString()) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'You can only edit your own sentences.',
+        'OfferController'
+      );
+    }
+
+    const updatedOffer = await this.offerModel
+      .findByIdAndUpdate(offerId, dto, { new: true })
+      .populate(['userId'])
+      .exec();
+
+    this.logger.info(`Offer ${offerId} successfully updated by user ${userId}`);
+    return updatedOffer;
   }
 
   public async findPremiumOfferByCity(
