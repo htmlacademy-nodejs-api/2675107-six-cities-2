@@ -378,6 +378,7 @@ components:
         - email
         - firstname
         - password
+        - type
       properties:
         email:
           type: string
@@ -399,6 +400,8 @@ components:
           type: string
           enum: [ordinary, pro]
           default: ordinary
+        avatarPath:
+          type: string
 
     user:
       type: object
@@ -580,6 +583,7 @@ components:
           type: integer
         commentCount:
           type: integer
+
 
     createComment:
       type: object

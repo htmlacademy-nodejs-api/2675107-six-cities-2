@@ -7,7 +7,7 @@ import { CityName } from '../../types/city.type.js';
 export interface OfferService {
   create(dto: CreateOfferDto, userId: string): Promise<DocumentType<OfferEntity>>;
   findById(offerId: string): Promise<DocumentType<OfferEntity> | null>;
-  find(limit?: number): Promise<DocumentType<OfferEntity>[]>;
+  find(limit?: number, userId?: string): Promise<DocumentType<OfferEntity>[]>;
   deleteById(offerId: string, userId: string): Promise<DocumentType<OfferEntity> | null>;
   updateById(offerId: string, dto: UpdateOfferDto, userId: string): Promise<DocumentType<OfferEntity> | null>;
   findPremiumOfferByCity(city: CityName, userId?: string): Promise<DocumentType<OfferEntity>[]> | null;

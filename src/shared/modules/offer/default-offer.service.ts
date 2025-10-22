@@ -23,12 +23,6 @@ export class DefaultOfferService implements OfferService {
       this.logger.error('Unauthorized offer creation attempt', new Error('User not authorized'));
       throw new Error('User not authorized');
     }
-    const city = await this.cityService.findByCityName(dto.city);
-
-    if (!city) {
-      throw new Error(`City "${dto.city}" not found`);
-    }
-
     const offerData = {
       ...dto,
       postDate: new Date(),
@@ -80,56 +74,47 @@ export class DefaultOfferService implements OfferService {
     ];
 
     if (userId) {
-      pipeline.push(
-        {
-          $lookup: {
-            from: 'user-offer-favorite',
-            let: { offerId: '$_id' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$offerId', '$$offerId'] },
-                      { $eq: ['$userId', new Types.ObjectId(userId)] }
-                    ]
+      if (Types.ObjectId.isValid(userId)) {
+        const userObjId = new Types.ObjectId(userId);
+
+        pipeline.push(
+          {
+            $lookup: {
+              from: 'user-offer-favorite',
+              let: { offerId: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$offerId', '$$offerId'] },
+                        { $eq: ['$userId', userObjId] }
+                      ]
+                    }
                   }
                 }
-              }
-            ],
-            as: 'favoriteInfo'
+              ],
+              as: 'favoriteInfo'
+            }
+          },
+          {
+            $addFields: {
+              isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+            }
+          },
+          {
+            $project: { favoriteInfo: 0 }
           }
-        },
-        {
-          $addFields: {
-            isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
-          }
-        }
-      );
-    }
-
-    pipeline.push({
-      $project: {
-        _id: 1,
-        title: 1,
-        postDate: 1,
-        city: 1,
-        previewImage: 1,
-        isPremium: 1,
-        rating: 1,
-        propertyType: 1,
-        price: 1,
-        commentsCount: 1,
-        ...(userId ? { isFavorite: 1 } : {})
+        );
       }
-    });
+    }
 
     const result = await this.offerModel.aggregate(pipeline).exec();
 
-    this.logger.info(`Found ${result.length}  offers`);
-
+    this.logger.info(`Found ${result.length} offers`);
     return result;
   }
+
 
   public async deleteById(offerId: string, userId: string): Promise<DocumentType<OfferEntity> | null> {
     try {
