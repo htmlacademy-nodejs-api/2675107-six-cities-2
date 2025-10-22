@@ -65,22 +65,26 @@ export class DefaultUserService implements UserService {
     return user;
   }
 
-  public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity> | false> {
+  public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity>> {
     if (!userId) {
-      return false;
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'User not authorizer.',
+        'UserController'
+      );
     }
 
-    try {
-      const user = await this.userModel.findById(userId).exec();
+    const user = await this.userModel.findById(userId).exec();
 
-      if (!user) {
-        return false;
-      }
-      return user;
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to check authorization for user ${userId}: ${msg}`);
-      return false;
+    if (!user) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND ,
+        'User not found.',
+        'UserController'
+      );
     }
+
+    this.logger.info(`User ${user.email} successfully auth in`);
+    return user;
   }
 }

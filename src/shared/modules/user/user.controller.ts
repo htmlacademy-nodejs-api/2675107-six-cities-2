@@ -11,6 +11,7 @@ import { StatusCodes } from 'http-status-codes';
 import { fillDTO } from '../../helpers/common.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { LoginUserRequest } from './request/login-user-request.type.js';
+import { isAuthorizedUserRequest } from './request/is-auth-user-request.type.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -24,6 +25,7 @@ export class UserController extends BaseController {
 
     this.addRoute({ path: '/register', method: HttpMethod.Post, handler: this.create });
     this.addRoute({ path: '/login', method: HttpMethod.Post, handler: this.login });
+    this.addRoute({ path: '/login', method: HttpMethod.Get, handler: this.isAuthorized });
   }
 
   public async create(
@@ -49,6 +51,14 @@ export class UserController extends BaseController {
     res: Response,
   ): Promise<void> {
     const result = await this.userService.login(body.email, body.password, this.configService.get('SALT'));
+    this.ok(res, result);
+  }
+
+  public async isAuthorized (
+    { body }: isAuthorizedUserRequest,
+    res: Response,
+  ): Promise<void> {
+    const result = await this.userService.isAuthorized(body.userId);
     this.ok(res, result);
   }
 }
