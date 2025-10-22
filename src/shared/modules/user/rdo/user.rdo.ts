@@ -2,6 +2,9 @@ import { Expose } from 'class-transformer';
 
 export class UserRdo {
   @Expose()
+  public _id: string;
+
+  @Expose()
   public email: string ;
 
   @Expose()
@@ -9,4 +12,7 @@ export class UserRdo {
 
   @Expose()
   public firstname: string;
+
+  @Expose()
+  public type: string;
 }

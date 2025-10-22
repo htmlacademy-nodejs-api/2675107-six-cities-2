@@ -5,6 +5,8 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { inject, injectable } from 'inversify';
 import { Component } from '../../types/index.js';
 import { Logger } from '../../libs/logger/index.js';
+import { HttpError } from '../../libs/express/index.js';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class DefaultUserService implements UserService {
@@ -42,15 +44,21 @@ export class DefaultUserService implements UserService {
     const user = await this.findByEmail(email);
 
     if (!user) {
-      this.logger.warn(`Login failed: user ${email} not found`);
-      return null;
+      throw new HttpError(
+        StatusCodes.CONFLICT,
+        `User with email «${email}» exists.`,
+        'UserController'
+      );
     }
 
     const isPasswordValid = user.comparePassword(password, salt);
 
     if (!isPasswordValid) {
-      this.logger.warn(`Login failed: invalid password for ${email}`);
-      return null;
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'Password is not valid.',
+        'UserController'
+      );
     }
 
     this.logger.info(`User ${email} successfully logged in`);
