@@ -16,10 +16,6 @@ export class DefaultCommentService implements CommentService {
 
   public async create(dto: CreateCommentDto, offerId: string, userId: string): Promise<DocumentType<CommentEntity>> {
 
-    if (!offerId || !userId) {
-      this.logger.warn(`OfferId ${offerId} or userId ${userId} not found`);
-      throw new Error('You are not allowed to edit this offer');
-    }
     const commentData = {
       ...dto,
       userId: userId,

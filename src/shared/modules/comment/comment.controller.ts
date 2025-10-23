@@ -4,16 +4,17 @@ import { BaseController, HttpError, HttpMethod } from '../../libs/express/index.
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
 import { StatusCodes } from 'http-status-codes';
-import { fillDTO } from '../../helpers/common.js';
 import { CommentService } from './comment-service.interface.js';
 import { CreateCommentRequest } from './request/create-comment-request.type.js';
 import { Types } from 'mongoose';
+import { OfferService } from '../offer/offer-service.interface.js';
 
 @injectable()
 export class CommentController extends BaseController {
   constructor(
     @inject(Component.Logger) protected readonly logger: Logger,
     @inject(Component.CommentService) private readonly commentService: CommentService,
+    @inject(Component.OfferService) private readonly offerService: OfferService,
   ) {
     super(logger);
     this.logger.info('Register routes for UserController…');
@@ -26,22 +27,35 @@ export class CommentController extends BaseController {
     res: Response,
   ): Promise<void> {
     const { offerId } = req.params;
-    const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const userId = req.query.userId;
 
-    if (!Types.ObjectId.isValid(offerId)) {
+    if (!Types.ObjectId.isValid(offerId as string) || !offerId) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
         'Invalid offer ID format.',
-        'OfferController'
+        'CommentController'
       );
     }
 
-    if(!userId) {
+    if(!Types.ObjectId.isValid(userId as string) || !userId) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
         'UserId required params for update.',
-        'OfferController'
+        'CommentController'
       );
     }
+
+    const result = await this.commentService.create(req.body, offerId as string, userId as string);
+
+    if(result.rating > 5) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'The value cannot be greater than 5.',
+        'CommentController'
+      );
+    }
+    await this.offerService.incCommentCountAndUpdateRating(offerId as string, result.rating);
+
+    this.created(res, result);
   }
 }

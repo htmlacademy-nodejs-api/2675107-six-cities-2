@@ -111,7 +111,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = req.params;
-    const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const userId = req.query.userId;
 
     if (!Types.ObjectId.isValid(offerId)) {
       throw new HttpError(
@@ -121,7 +121,7 @@ export class OfferController extends BaseController {
       );
     }
 
-    if(!userId) {
+    if(!Types.ObjectId.isValid(userId as string) || !userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         'UserId required params for delete.',
@@ -129,7 +129,7 @@ export class OfferController extends BaseController {
       );
     }
 
-    const result = await this.offerService.deleteById(offerId, userId);
+    const result = await this.offerService.deleteById(offerId, userId as string);
     const destroyComment = await this.commentService.deleteByOfferId(offerId);
 
     this.ok(res, result + destroyComment);
