@@ -47,13 +47,6 @@ export class CommentController extends BaseController {
 
     const result = await this.commentService.create(req.body, offerId as string, userId as string);
 
-    if(result.rating > 5) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'The value cannot be greater than 5.',
-        'CommentController'
-      );
-    }
     await this.offerService.incCommentCountAndUpdateRating(offerId as string, result.rating);
 
     this.created(res, result);

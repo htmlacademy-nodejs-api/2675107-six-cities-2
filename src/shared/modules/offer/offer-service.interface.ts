@@ -10,7 +10,7 @@ export interface OfferService {
   find(limit?: number, userId?: string): Promise<DocumentType<OfferEntity>[]>;
   deleteById(offerId: string, userId: string): Promise<string>;
   updateById(offerId: string, dto: UpdateOfferDto, userId: string): Promise<DocumentType<OfferEntity> | null>;
-  findPremiumOfferByCity(city: CityName, userId?: string): Promise<DocumentType<OfferEntity>[]> | null;
+  findPremiumOfferByCity(city: CityName, userId?: string | undefined): Promise<DocumentType<OfferEntity>[]> | null;
   findFavoriteOffer(userId: string): Promise<DocumentType<OfferEntity>[]> | null;
   incCommentCountAndUpdateRating(offerId: string, rating: number): Promise<DocumentType<OfferEntity> | null>;
 }
