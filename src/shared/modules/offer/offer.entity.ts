@@ -21,37 +21,39 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   @prop({ trim: true })
   public description: string;
 
-  @prop()
+  @prop({required: true})
   public postDate: Date;
 
   @prop({
     type: () => String,
-    enum: ['Paris', 'Cologne', 'Brussels', 'Amsterdam', 'Hamburg', 'Dusseldorf']
+    enum: ['Paris', 'Cologne', 'Brussels', 'Amsterdam', 'Hamburg', 'Dusseldorf'],
+    required: true
   })
   public city: CityName;
 
-  @prop()
+  @prop({required: true})
   public previewImage: string;
 
-  @prop()
+  @prop({required: true})
   public photos: string[];
 
-  @prop()
+  @prop({required: true})
   public isPremium: boolean;
 
-  @prop()
+  @prop({required: true})
   public rating: number;
 
   @prop({
     type: () => String,
-    enum: ['apartment', 'house', 'room', 'hotel']
+    enum: ['apartment', 'house', 'room', 'hotel'],
+    required: true
   })
   public propertyType: PropertyType;
 
-  @prop()
+  @prop({required: true})
   public rooms: number;
 
-  @prop()
+  @prop({required: true})
   public guests: number;
 
   @prop({ required: true })
@@ -59,7 +61,8 @@ export class OfferEntity extends defaultClasses.TimeStamps {
 
   @prop({
     type: () => String,
-    enum: ['Breakfast', 'Air conditioning', 'Laptop friendly workspace', 'Baby seat', 'Washer', 'Towels', 'Fridge']
+    enum: ['Breakfast', 'Air conditioning', 'Laptop friendly workspace', 'Baby seat', 'Washer', 'Towels', 'Fridge'],
+    required: true
   })
   public amenities: Amenities[];
 
@@ -69,7 +72,7 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   })
   public userId: Ref<UserEntity>;
 
-  @prop({default: 0})
+  @prop({required: true,})
   public commentsCount: number;
 
   @prop({
