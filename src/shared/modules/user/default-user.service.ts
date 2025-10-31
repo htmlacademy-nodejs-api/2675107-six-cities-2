@@ -5,6 +5,8 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { inject, injectable } from 'inversify';
 import { Component } from '../../types/index.js';
 import { Logger } from '../../libs/logger/index.js';
+import { HttpError } from '../../libs/express/index.js';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class DefaultUserService implements UserService {
@@ -14,6 +16,7 @@ export class DefaultUserService implements UserService {
   ) {}
 
   public async create(dto: CreateUserDto, salt: string): Promise<DocumentType<UserEntity>> {
+
     const user = new UserEntity(dto);
     user.setPassword(dto.password, salt);
 
@@ -35,5 +38,53 @@ export class DefaultUserService implements UserService {
     }
 
     return this.create(dto, salt);
+  }
+
+  public async login(email: string, password: string, salt: string): Promise<DocumentType<UserEntity> | null> {
+    const user = await this.findByEmail(email);
+
+    if (!user) {
+      throw new HttpError(
+        StatusCodes.CONFLICT,
+        `User with email «${email}» exists.`,
+        'UserController'
+      );
+    }
+
+    const isPasswordValid = user.comparePassword(password, salt);
+
+    if (!isPasswordValid) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'Password is not valid.',
+        'UserController'
+      );
+    }
+
+    this.logger.info(`User ${email} successfully logged in`);
+    return user;
+  }
+
+  public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity>> {
+    if (!userId) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'User not authorizer.',
+        'UserController'
+      );
+    }
+
+    const user = await this.userModel.findById(userId).exec();
+
+    if (!user) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND ,
+        'User not found.',
+        'UserController'
+      );
+    }
+
+    this.logger.info(`User ${user.email} successfully auth in`);
+    return user;
   }
 }

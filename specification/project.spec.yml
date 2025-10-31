@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: API сервер для демо-проекта «Куплю. Продам».
+  title: API сервер для демо-проекта «Шесть городов».
   description: |-
-    * Список ресурсов и маршрутов сервера «Куплю. Продам».
+    * Список ресурсов и маршрутов сервера «Шесть городов».
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -378,6 +378,7 @@ components:
         - email
         - firstname
         - password
+        - type
       properties:
         email:
           type: string
@@ -399,6 +400,8 @@ components:
           type: string
           enum: [ordinary, pro]
           default: ordinary
+        avatarPath:
+          type: string
 
     user:
       type: object
@@ -451,14 +454,13 @@ components:
         - description
         - city
         - previewImage
-        - images
+        - photos
         - isPremium
         - propertyType
         - rooms
         - guests
         - price
         - amenities
-        - coordinates
       properties:
         title:
           type: string
@@ -472,7 +474,7 @@ components:
           $ref: '#/components/schemas/cityName'
         previewImage:
           type: string
-        images:
+        photos:
           type: array
           items:
             type: string
@@ -498,8 +500,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/amenities'
-        coordinates:
-          $ref: '#/components/schemas/coordinates'
 
     updateOffer:
       type: object
@@ -512,11 +512,9 @@ components:
           type: string
           minLength: 20
           maxLength: 1024
-        city:
-          $ref: '#/components/schemas/cityName'
         previewImage:
           type: string
-        images:
+        photos:
           type: array
           items:
             type: string
@@ -542,8 +540,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/amenities'
-        coordinates:
-          $ref: '#/components/schemas/coordinates'
 
     offer:
       allOf:
@@ -561,7 +557,8 @@ components:
               type: integer
             author:
               $ref: '#/components/schemas/user'
-
+            coordinates:
+              $ref: '#/components/schemas/coordinates'
     offerShort:
       type: object
       properties:
@@ -586,6 +583,7 @@ components:
           type: integer
         commentCount:
           type: integer
+
 
     createComment:
       type: object
