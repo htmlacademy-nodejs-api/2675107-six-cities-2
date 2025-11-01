@@ -205,88 +205,68 @@ export class DefaultOfferService implements OfferService {
     cityName: CityName,
     userId?: string
   ): Promise<DocumentType<OfferEntity>[]> {
-    try {
 
-      const city = await this.cityService.findByCityName(cityName);
+    const city = await this.cityService.findByCityName(cityName);
 
-      if (!city) {
-        this.logger.warn(`City with name "${cityName}" not found`);
-        return [];
-      }
+    if (!city) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND,
+        `City ${cityName} not found.`,
+        'OfferController'
+      );
+    }
 
-      const pipeline: PipelineStage[] = [
-        { $match: { city: city.name, isPremium: true } },
-        { $sort: { postDate: SortType.Down } },
-        { $limit: 3 }
-      ];
+    const pipeline: PipelineStage[] = [
+      { $match: { city: city.name, isPremium: true } },
+      { $sort: { postDate: SortType.Down } },
+      { $limit: 3 }
+    ];
 
-      if (userId) {
-        pipeline.push(
-          {
-            $lookup: {
-              from: 'user-offer-favorite',
-              let: { offerId: '$_id' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$offerId', '$$offerId'] },
-                        { $eq: ['$userId', new Types.ObjectId(userId)] }
-                      ]
-                    }
+    if (userId) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'user-offer-favorite',
+            let: { offerId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$offerId', '$$offerId'] },
+                      { $eq: ['$userId', new Types.ObjectId(userId)] }
+                    ]
                   }
                 }
-              ],
-              as: 'favoriteInfo'
-            }
-          },
-          {
-            $addFields: {
-              isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
-            }
+              }
+            ],
+            as: 'favoriteInfo'
           }
-        );
-      }
-
-      pipeline.push({
-        $project: {
-          _id: 1,
-          title: 1,
-          postDate: 1,
-          city: 1,
-          previewImage: 1,
-          isPremium: 1,
-          rating: 1,
-          propertyType: 1,
-          price: 1,
-          commentsCount: 1,
-          ...(userId ? { isFavorite: 1 } : {})
+        },
+        {
+          $addFields: {
+            isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+          }
+        },
+        {
+          $project: { favoriteInfo: 0 }
         }
-      });
-
-      const result = await this.offerModel.aggregate(pipeline).exec();
-
-      this.logger.info(`Found ${result.length} premium offers for city "${cityName}"`);
-
-      return result;
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to find premium offers for city "${cityName}": ${errorMessage}`);
-      return [];
+      );
     }
+
+    const result = await this.offerModel.aggregate(pipeline).exec();
+
+    this.logger.info(`Found ${result.length} premium offers for city "${cityName}"`);
+
+    return result;
+
   }
 
   public async findFavoriteOffer(
     userId: string
   ): Promise<DocumentType<OfferEntity>[]> {
-    if (!userId) {
-      this.logger.warn('Unauthorized access to favorite offers');
-      return [];
-    }
 
     const aggregation = this.offerModel.aggregate<DocumentType<OfferEntity>>([
-
       {
         $lookup: {
           from: 'user-offer-favorite',
@@ -312,19 +292,13 @@ export class DefaultOfferService implements OfferService {
         },
       },
       {
-        $project: {
-          _id: 1,
-          title: 1,
-          postDate: 1,
-          city: 1,
-          previewImage: 1,
-          isPremium: 1,
-          rating: 1,
-          propertyType: 1,
-          price: 1,
-          commentsCount: 1,
-        },
+        $addFields: {
+          isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+        }
       },
+      {
+        $project: { favoriteInfo: 0 }
+      }
     ]);
 
     const result = await aggregation.exec();
@@ -339,10 +313,22 @@ export class DefaultOfferService implements OfferService {
     const offer = await this.offerModel.findById(offerId).exec();
 
     if (!offer) {
-      throw new Error(`Offer with id ${offerId} not found`);
+      throw new HttpError(
+        StatusCodes.NOT_FOUND,
+        'Offer not found.',
+        'OfferController'
+      );
     }
 
     const oldRating = offer.rating ?? 0;
+
+    if(newRating > 5) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'The value cannot be greater than 5.',
+        'CommentController'
+      );
+    }
 
     const updatedRating = (oldRating + newRating) / 2;
 

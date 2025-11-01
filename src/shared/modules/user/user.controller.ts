@@ -11,6 +11,9 @@ import { StatusCodes } from 'http-status-codes';
 import { fillDTO } from '../../helpers/common.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { LoginUserRequest } from './request/login-user-request.type.js';
+import { RequestParams } from '../../libs/express/types/request.params.type.js';
+import { RequestBody } from '../../libs/express/types/request-body.type.js';
+import { QueryUserId } from '../offer/request/query-userid.type.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -54,10 +57,10 @@ export class UserController extends BaseController {
   }
 
   public async isAuthorized (
-    req: Request,
+    { query }: Request<RequestParams, unknown, RequestBody, QueryUserId>,
     res: Response,
   ): Promise<void> {
-    const user = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const user = query.userId ? String(query.userId) : undefined;
     const result = await this.userService.isAuthorized(user);
     this.ok(res, result);
   }
