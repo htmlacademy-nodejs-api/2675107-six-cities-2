@@ -454,7 +454,7 @@ components:
           example: 123456
           minLength: 6
           maxLength: 12
-        type:
+        userType:
           type: string
           enum: [ordinary, pro]
           default: ordinary
@@ -476,7 +476,7 @@ components:
         avatar:
           type: string
           example: /img/avatar.jpg
-        type:
+        userType:
           type: string
           enum: [ordinary, pro]
 
@@ -671,4 +671,17 @@ components:
               type: string
               format: date-time
             userId:
-              type: string
+                type: object
+                properties:
+                  email:
+                    type: string
+                    example: keks@htmlacademy.ru
+                  firstname:
+                    type: string
+                    example: Keks
+                  avatar:
+                    type: string
+                    example: /img/avatar.jpg
+                  userType:
+                    type: string
+                    enum: [ordinary, pro]

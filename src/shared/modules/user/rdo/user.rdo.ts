@@ -11,5 +11,5 @@ export class UserRdo {
   public firstname: string;
 
   @Expose()
-  public type: string;
+  public userType: string;
 }

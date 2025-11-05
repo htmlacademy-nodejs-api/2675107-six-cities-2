@@ -32,6 +32,7 @@ export class DefaultCommentService implements CommentService {
       .find({ offerId })
       .sort({ postDate: -1 })
       .limit(50)
+      .populate(['userId'])
       .exec();
   }
 
