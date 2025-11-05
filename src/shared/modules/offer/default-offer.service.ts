@@ -343,4 +343,8 @@ export class DefaultOfferService implements OfferService {
 
     return updatedOffer;
   }
+
+  public async exists(documentId: string): Promise<boolean> {
+    return false;
+  }
 }

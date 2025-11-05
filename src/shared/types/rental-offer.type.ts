@@ -3,7 +3,24 @@ import { City } from './city.type.js';
 
 export type Amenities = 'Breakfast' | 'Air conditioning' | 'Laptop friendly workspace' | 'Baby seat' | 'Washer' | 'Towels' | 'Fridge';
 
+export enum AmenitiesEnum {
+  Breakfast = 'Breakfast',
+  AirConditioning = 'Air conditioning',
+  LaptopFriendlyWorkspace = 'Laptop friendly workspace',
+  BabySeat = 'Baby seat',
+  Washer = 'Washer',
+  Towels = 'Towels',
+  Fridge = 'Fridge',
+}
+
 export type PropertyType = 'apartment' | 'house' | 'room' | 'hotel';
+
+export enum PropertyTypeEnum {
+  Apartment = 'apartment',
+  House = 'house',
+  Room = 'room',
+  Hotel = 'hotel',
+}
 
 export type RentalOffer = {
   title: string; // Наименование (10-100 символов)

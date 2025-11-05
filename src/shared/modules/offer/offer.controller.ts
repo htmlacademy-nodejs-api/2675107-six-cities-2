@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { Logger } from '../../libs/logger/index.js';
 import { CityName, Component } from '../../types/index.js';
-import { BaseController, HttpError, HttpMethod } from '../../libs/express/index.js';
+import { BaseController, HttpError, HttpMethod, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { OfferService } from './offer-service.interface.js';
 import { fillDTO } from '../../helpers/common.js';
 import { OfferRdo } from './rdo/index-offer.rdo.js';
@@ -18,6 +18,7 @@ import { RequestParams } from '../../libs/express/types/request.params.type.js';
 import { RequestBody } from '../../libs/express/types/request-body.type.js';
 import { ParamCity } from './request/param-city.type.js';
 import { QueryIndexOffer } from './request/query-index-offer.type.js';
+import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
 
 @injectable()
 export class OfferController extends BaseController {
@@ -32,12 +33,25 @@ export class OfferController extends BaseController {
     this.logger.info('Register routes for CategoryController…');
 
     this.addRoute({ path: '/', method: HttpMethod.Get, handler: this.index });
-    this.addRoute({ path: '/', method: HttpMethod.Post, handler: this.create });
+    this.addRoute({
+      path: '/',
+      method: HttpMethod.Post,
+      handler: this.create,
+      middlewares: [new ValidateDtoMiddleware(CreateOfferDto)]
+    });
     this.addRoute({ path: '/premium/:city', method: HttpMethod.Get, handler: this.indexPremiumCity });
     this.addRoute({ path: '/favorite', method: HttpMethod.Get, handler: this.indexFavorite });
     this.addRoute({ path: '/favorite/:offerId', method: HttpMethod.Post, handler: this.createFavorite });
     this.addRoute({ path: '/favorite/:offerId', method: HttpMethod.Delete, handler: this.destroyFavorite });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Get, handler: this.show });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Get,
+      handler: this.show,
+      middlewares: [
+        new ValidateObjectIdMiddleware('offerId'),
+        new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+      ]
+    });
     this.addRoute({ path: '/:offerId', method: HttpMethod.Patch, handler: this.update });
     this.addRoute({ path: '/:offerId', method: HttpMethod.Delete, handler: this.destroy });
   }
