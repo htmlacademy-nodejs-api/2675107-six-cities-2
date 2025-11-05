@@ -1,6 +1,6 @@
 import { CityName } from '../../../types/city.type.js';
 import { Amenities, AmenitiesEnum, PropertyType, PropertyTypeEnum } from '../../../types/rental-offer.type.js';
-import { IsArray, IsDateString, IsEnum, IsInt, IsMongoId, IsOptional, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsArray, IsEnum, MaxLength, MinLength } from 'class-validator';
 import { CreateOfferValidationMessage } from './create-offer.message.js';
 
 export class CreateOfferDto {

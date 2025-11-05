@@ -2,5 +2,6 @@ import { Query } from 'express-serve-static-core';
 
 export type QueryIndexOffer = {
   userId: string;
-  limit?: number
+  limit?: number;
+  page?: number;
 } | Query;

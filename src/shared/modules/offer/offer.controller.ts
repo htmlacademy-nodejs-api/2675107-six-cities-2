@@ -61,10 +61,15 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const limit = query.limit ? Number(query.limit) : undefined;
+    const page = query.page ? Number(query.page) : undefined;
     const userId = query.userId ? String(query.userId) : undefined;
 
-    const offers = await this.offerService.find(limit, userId);
+    const offers = await this.offerService.find(limit, page, userId);
     const responseData = fillDTO(OfferRdo, offers);
+
+    console.log(offers);
+    console.log(responseData);
+
     this.ok(res, responseData);
   }
 
@@ -72,17 +77,17 @@ export class OfferController extends BaseController {
     { body, query }: Request<RequestParams, unknown, CreateOfferDto, QueryUserId>,
     res: Response
   ): Promise<void> {
-    const userId = String(query.userId);
+    const userId = query.userId;
 
-    if(!Types.ObjectId.isValid(userId) || !userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'UserId required params for delete.',
+        'To create posts you need to log in',
         'OfferController'
       );
     }
 
-    const result = await this.offerService.create(body, userId);
+    const result = await this.offerService.create(body, String(userId));
     this.created(res, result);
   }
 
@@ -91,7 +96,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId ? String(query.userId) : undefined;
+    const userId = query.userId ;
 
     if (!Types.ObjectId.isValid(offerId)) {
       throw new HttpError(
@@ -101,7 +106,15 @@ export class OfferController extends BaseController {
       );
     }
 
-    const result = await this.offerService.findById(offerId, userId);
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'UserId required params',
+        'OfferController'
+      );
+    }
+
+    const result = await this.offerService.findById(offerId, String(userId));
 
     this.ok(res, result);
   }
@@ -111,7 +124,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = String(query.userId);
+    const userId = query.userId;
 
     if (!Types.ObjectId.isValid(offerId)) {
       throw new HttpError(
@@ -121,15 +134,15 @@ export class OfferController extends BaseController {
       );
     }
 
-    if(!userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'UserId required params for update.',
+        StatusCodes.UNAUTHORIZED,
+        'UserId required params.',
         'OfferController'
       );
     }
 
-    const result = await this.offerService.updateById(offerId, body, userId);
+    const result = await this.offerService.updateById(offerId, body, String(userId));
 
     this.ok(res, result);
   }
@@ -139,7 +152,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = String(query.userId);
+    const userId = query.userId;
 
     if (!Types.ObjectId.isValid(offerId) || !offerId) {
       throw new HttpError(
@@ -149,15 +162,15 @@ export class OfferController extends BaseController {
       );
     }
 
-    if(!Types.ObjectId.isValid(userId) || !userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'UserId required params for delete.',
+        'UserId required params.',
         'OfferController'
       );
     }
 
-    const result = await this.offerService.deleteById(offerId, userId);
+    const result = await this.offerService.deleteById(offerId, String(userId));
     const destroyComment = await this.commentService.deleteByOfferId(offerId);
 
     this.ok(res, result + destroyComment);
@@ -178,7 +191,7 @@ export class OfferController extends BaseController {
       );
     }
 
-    const result = await this.offerService.findPremiumOfferByCity(city as CityName, userId as string | undefined);
+    const result = await this.offerService.findPremiumOfferByCity(city as CityName, userId);
 
     const responseData = fillDTO(OfferRdo, result);
     this.ok(res, responseData);
@@ -188,16 +201,16 @@ export class OfferController extends BaseController {
     { query }: Request<RequestParams, unknown, RequestBody, QueryUserId>,
     res: Response
   ): Promise<void> {
-    const userId = String(query.userId);
+    const userId = query.userId;
 
-    if(!Types.ObjectId.isValid(userId) || !userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         'UserId required params for find favorite.',
         'OfferController'
       );
     }
-    const result = await this.offerService.findFavoriteOffer(userId);
+    const result = await this.offerService.findFavoriteOffer(String(userId));
 
     const responseData = fillDTO(OfferRdo, result);
     this.ok(res, responseData);
@@ -208,7 +221,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = String(query.userId);
+    const userId = query.userId;
 
     if (!Types.ObjectId.isValid(offerId) || !offerId) {
       throw new HttpError(
@@ -218,15 +231,15 @@ export class OfferController extends BaseController {
       );
     }
 
-    if(!Types.ObjectId.isValid(userId) || !userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'UserId required params for delete.',
+        'UserId required params.',
         'OfferController'
       );
     }
 
-    const result = await this.userOfferFavoriteService.addToFavorites(userId, offerId);
+    const result = await this.userOfferFavoriteService.addToFavorites(String(userId), offerId);
 
     this.ok(res, result);
   }
@@ -236,7 +249,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = String(query.userId);
+    const userId = query.userId;
 
     if (!Types.ObjectId.isValid(offerId) || !offerId) {
       throw new HttpError(
@@ -246,15 +259,15 @@ export class OfferController extends BaseController {
       );
     }
 
-    if(!Types.ObjectId.isValid(userId) || !userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'UserId required params for delete.',
+        'UserId required params.',
         'OfferController'
       );
     }
 
-    const result = await this.userOfferFavoriteService.removeFromFavorites(userId, offerId);
+    const result = await this.userOfferFavoriteService.removeFromFavorites(String(userId), offerId);
 
     this.ok(res, result);
   }
