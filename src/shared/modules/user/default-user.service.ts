@@ -40,13 +40,13 @@ export class DefaultUserService implements UserService {
     return this.create(dto, salt);
   }
 
-  public async login(email: string, password: string, salt: string): Promise<DocumentType<UserEntity> | null> {
+  public async login(email: string, password: string, salt: string): Promise<string | null> {
     const user = await this.findByEmail(email);
 
     if (!user) {
       throw new HttpError(
-        StatusCodes.CONFLICT,
-        `User with email «${email}» exists.`,
+        StatusCodes.BAD_REQUEST,
+        'Incorrect login or password.',
         'UserController'
       );
     }
@@ -55,21 +55,21 @@ export class DefaultUserService implements UserService {
 
     if (!isPasswordValid) {
       throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'Password is not valid.',
+        StatusCodes.BAD_REQUEST,
+        'Incorrect login or password.',
         'UserController'
       );
     }
 
     this.logger.info(`User ${email} successfully logged in`);
-    return user;
+    return 'token';
   }
 
   public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity>> {
     if (!userId) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'User not authorizer.',
+        'User not authorized.',
         'UserController'
       );
     }

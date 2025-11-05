@@ -1,13 +1,19 @@
 import { inject, injectable } from 'inversify';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { BaseController, HttpError, HttpMethod } from '../../libs/express/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
 import { StatusCodes } from 'http-status-codes';
 import { CommentService } from './comment-service.interface.js';
-import { CreateCommentRequest } from './request/create-comment-request.type.js';
 import { Types } from 'mongoose';
 import { OfferService } from '../offer/offer-service.interface.js';
+import { ParamOfferId } from '../offer/request/param-offerid.type.js';
+import { CreateCommentDto } from './dto/create-comment.dto.js';
+import { QueryUserId } from '../offer/request/query-userid.type.js';
+import { RequestBody } from '../../libs/express/types/request-body.type.js';
+import { fillDTO } from '../../helpers/common.js';
+import { IndexCommentRdo } from './rdo/index-comment.rdo.js';
+
 
 @injectable()
 export class CommentController extends BaseController {
@@ -20,16 +26,17 @@ export class CommentController extends BaseController {
     this.logger.info('Register routes for UserController…');
 
     this.addRoute({ path: '/:offerId', method: HttpMethod.Post, handler: this.create });
+    this.addRoute({ path: '/:offerId', method: HttpMethod.Get, handler: this.index });
   }
 
   public async create(
-    req: CreateCommentRequest,
+    { body, params, query}: Request<ParamOfferId, unknown, CreateCommentDto, QueryUserId>,
     res: Response,
   ): Promise<void> {
-    const { offerId } = req.params;
-    const userId = req.query.userId;
+    const { offerId } = params;
+    const userId = query.userId;
 
-    if (!Types.ObjectId.isValid(offerId as string) || !offerId) {
+    if (!Types.ObjectId.isValid(offerId) || !offerId) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
         'Invalid offer ID format.',
@@ -37,25 +44,38 @@ export class CommentController extends BaseController {
       );
     }
 
-    if(!Types.ObjectId.isValid(userId as string) || !userId) {
+    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
-        'UserId required params for update.',
+        'UserId required params.',
         'CommentController'
       );
     }
 
-    const result = await this.commentService.create(req.body, offerId as string, userId as string);
+    const result = await this.commentService.create(body, offerId, String(userId));
 
-    if(result.rating > 5) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'The value cannot be greater than 5.',
-        'CommentController'
-      );
-    }
-    await this.offerService.incCommentCountAndUpdateRating(offerId as string, result.rating);
+    await this.offerService.incCommentCountAndUpdateRating(offerId, result.rating);
 
     this.created(res, result);
+  }
+
+  public async index(
+    { params }: Request<ParamOfferId, unknown, RequestBody>,
+    res: Response,
+  ): Promise<void> {
+    const { offerId } = params;
+
+    if (!Types.ObjectId.isValid(offerId) || !offerId) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'Invalid offer ID format.',
+        'CommentController'
+      );
+    }
+    const result = await this.commentService.findByOfferId(offerId);
+
+    const responseData = fillDTO(IndexCommentRdo, result);
+
+    this.ok(res, responseData);
   }
 }

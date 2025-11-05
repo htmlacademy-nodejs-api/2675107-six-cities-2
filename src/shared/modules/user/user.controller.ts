@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
-import { BaseController, HttpError, HttpMethod } from '../../libs/express/index.js';
+import { BaseController, HttpError, HttpMethod, UploadFileMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
 import { CreateUserRequest } from './request/create-user-request.type.js';
@@ -11,6 +11,9 @@ import { StatusCodes } from 'http-status-codes';
 import { fillDTO } from '../../helpers/common.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { LoginUserRequest } from './request/login-user-request.type.js';
+import { RequestParams } from '../../libs/express/types/request.params.type.js';
+import { RequestBody } from '../../libs/express/types/request-body.type.js';
+import { QueryUserId } from '../offer/request/query-userid.type.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -25,6 +28,15 @@ export class UserController extends BaseController {
     this.addRoute({ path: '/register', method: HttpMethod.Post, handler: this.create });
     this.addRoute({ path: '/login', method: HttpMethod.Post, handler: this.login });
     this.addRoute({ path: '/login', method: HttpMethod.Get, handler: this.isAuthorized });
+    this.addRoute({
+      path: '/:userId/avatar',
+      method: HttpMethod.Post,
+      handler: this.uploadAvatar,
+      middlewares: [
+        new ValidateObjectIdMiddleware('userId'),
+        new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'avatar'),
+      ]
+    });
   }
 
   public async create(
@@ -54,11 +66,17 @@ export class UserController extends BaseController {
   }
 
   public async isAuthorized (
-    req: Request,
+    { query }: Request<RequestParams, unknown, RequestBody, QueryUserId>,
     res: Response,
   ): Promise<void> {
-    const user = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const user = query.userId ? String(query.userId) : undefined;
     const result = await this.userService.isAuthorized(user);
     this.ok(res, result);
+  }
+
+  public async uploadAvatar(req: Request, res: Response) {
+    this.created(res, {
+      filepath: req.file?.path
+    });
   }
 }

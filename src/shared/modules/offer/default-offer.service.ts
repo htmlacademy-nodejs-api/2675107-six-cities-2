@@ -92,12 +92,16 @@ export class DefaultOfferService implements OfferService {
     return offer;
   }
 
-  public async find(limit?: number, userId?: string): Promise<DocumentType<OfferEntity>[]> {
+  public async find(limit?: number, page?: number, userId?: string): Promise<DocumentType<OfferEntity>[]> {
     const defaultLimit = 60;
     const finalLimit = limit && limit > 0 ? limit : defaultLimit;
 
+    const finalPage = page && page > 0 ? page : 1;
+    const skip = (finalPage - 1) * finalLimit;
+
     const pipeline: PipelineStage[] = [
       { $sort: { postDate: SortType.Down } },
+      { $skip: skip },
       { $limit: finalLimit }
     ];
 
@@ -139,30 +143,18 @@ export class DefaultOfferService implements OfferService {
 
     const result = await this.offerModel.aggregate(pipeline).exec();
 
-    this.logger.info(`Found ${result.length} offers`);
+    this.logger.info(`Found ${result.length} offers (page: ${finalPage})`);
     return result;
   }
 
 
   public async deleteById(offerId: string, userId: string): Promise<string> {
 
-    const offer = await this.offerModel.findById(offerId).exec();
+    const existingOffer = await this.offerModel.findById(offerId).exec();
 
-    if (!offer) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        'Offer not found for delete.',
-        'OfferController'
-      );
-    }
+    this.existsEntity(existingOffer);
 
-    if (offer.userId.toString() !== userId.toString()) {
-      throw new HttpError(
-        StatusCodes.FORBIDDEN,
-        'You can only delete your own sentences.',
-        'OfferController'
-      );
-    }
+    this.compareUsers(existingOffer.userId.toString(), userId.toString());
 
     await this.offerModel.findByIdAndDelete(offerId).exec();
 
@@ -176,21 +168,9 @@ export class DefaultOfferService implements OfferService {
 
     const existingOffer = await this.offerModel.findById(offerId).exec();
 
-    if (!existingOffer) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        'Offer not found for UPDATE.',
-        'OfferController'
-      );
-    }
+    this.existsEntity(existingOffer);
 
-    if (existingOffer.userId.toString() !== userId.toString()) {
-      throw new HttpError(
-        StatusCodes.FORBIDDEN,
-        'You can only edit your own sentences.',
-        'OfferController'
-      );
-    }
+    this.compareUsers(existingOffer.userId.toString(), userId.toString());
 
     const updatedOffer = await this.offerModel
       .findByIdAndUpdate(offerId, dto, { new: true })
@@ -205,88 +185,62 @@ export class DefaultOfferService implements OfferService {
     cityName: CityName,
     userId?: string
   ): Promise<DocumentType<OfferEntity>[]> {
-    try {
 
-      const city = await this.cityService.findByCityName(cityName);
+    const city = await this.cityService.findByCityName(cityName);
 
-      if (!city) {
-        this.logger.warn(`City with name "${cityName}" not found`);
-        return [];
-      }
+    this.existsEntity(city);
 
-      const pipeline: PipelineStage[] = [
-        { $match: { city: city.name, isPremium: true } },
-        { $sort: { postDate: SortType.Down } },
-        { $limit: 3 }
-      ];
+    const pipeline: PipelineStage[] = [
+      { $match: { city: city.name, isPremium: true } },
+      { $sort: { postDate: SortType.Down } },
+      { $limit: 3 }
+    ];
 
-      if (userId) {
-        pipeline.push(
-          {
-            $lookup: {
-              from: 'user-offer-favorite',
-              let: { offerId: '$_id' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$offerId', '$$offerId'] },
-                        { $eq: ['$userId', new Types.ObjectId(userId)] }
-                      ]
-                    }
+    if (userId) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'user-offer-favorite',
+            let: { offerId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$offerId', '$$offerId'] },
+                      { $eq: ['$userId', new Types.ObjectId(userId)] }
+                    ]
                   }
                 }
-              ],
-              as: 'favoriteInfo'
-            }
-          },
-          {
-            $addFields: {
-              isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
-            }
+              }
+            ],
+            as: 'favoriteInfo'
           }
-        );
-      }
-
-      pipeline.push({
-        $project: {
-          _id: 1,
-          title: 1,
-          postDate: 1,
-          city: 1,
-          previewImage: 1,
-          isPremium: 1,
-          rating: 1,
-          propertyType: 1,
-          price: 1,
-          commentsCount: 1,
-          ...(userId ? { isFavorite: 1 } : {})
+        },
+        {
+          $addFields: {
+            isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+          }
+        },
+        {
+          $project: { favoriteInfo: 0 }
         }
-      });
-
-      const result = await this.offerModel.aggregate(pipeline).exec();
-
-      this.logger.info(`Found ${result.length} premium offers for city "${cityName}"`);
-
-      return result;
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to find premium offers for city "${cityName}": ${errorMessage}`);
-      return [];
+      );
     }
+
+    const result = await this.offerModel.aggregate(pipeline).exec();
+
+    this.logger.info(`Found ${result.length} premium offers for city "${cityName}"`);
+
+    return result;
+
   }
 
   public async findFavoriteOffer(
     userId: string
   ): Promise<DocumentType<OfferEntity>[]> {
-    if (!userId) {
-      this.logger.warn('Unauthorized access to favorite offers');
-      return [];
-    }
 
     const aggregation = this.offerModel.aggregate<DocumentType<OfferEntity>>([
-
       {
         $lookup: {
           from: 'user-offer-favorite',
@@ -312,19 +266,13 @@ export class DefaultOfferService implements OfferService {
         },
       },
       {
-        $project: {
-          _id: 1,
-          title: 1,
-          postDate: 1,
-          city: 1,
-          previewImage: 1,
-          isPremium: 1,
-          rating: 1,
-          propertyType: 1,
-          price: 1,
-          commentsCount: 1,
-        },
+        $addFields: {
+          isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+        }
       },
+      {
+        $project: { favoriteInfo: 0 }
+      }
     ]);
 
     const result = await aggregation.exec();
@@ -338,13 +286,20 @@ export class DefaultOfferService implements OfferService {
 
     const offer = await this.offerModel.findById(offerId).exec();
 
-    if (!offer) {
-      throw new Error(`Offer with id ${offerId} not found`);
+    this.existsEntity(offer);
+
+    if(newRating > 5) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'The value cannot be greater than 5.',
+        'CommentController'
+      );
     }
 
     const oldRating = offer.rating ?? 0;
+    const oldCount = offer.commentsCount ?? 0;
 
-    const updatedRating = (oldRating + newRating) / 2;
+    const updatedRating = (oldRating * oldCount + newRating) / (oldCount + 1);
 
     const updatedOffer = await this.offerModel.findByIdAndUpdate(
       offerId,
@@ -356,5 +311,35 @@ export class DefaultOfferService implements OfferService {
     ).exec();
 
     return updatedOffer;
+  }
+
+  public async exists(documentId: string): Promise<boolean> {
+    if(documentId) {
+      return true;
+    }
+    return false;
+  }
+
+  public compareUsers(
+    offerUserId: string | Types.ObjectId,
+    userId: string | Types.ObjectId
+  ): void {
+    if (offerUserId !== userId) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'You can only edit your own sentences.',
+        'OfferController'
+      );
+    }
+  }
+
+  public existsEntity<T>(entity: T | null): asserts entity is T {
+    if (!entity) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND,
+        'Entity not found.',
+        'OfferController'
+      );
+    }
   }
 }
