@@ -19,6 +19,7 @@ import { ParamCity } from './request/param-city.type.js';
 import { QueryIndexOffer } from './request/query-index-offer.type.js';
 import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
 import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
+import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 
 @injectable()
 export class OfferController extends BaseController {
@@ -43,7 +44,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Post,
       handler: this.create,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
+        new AuthMiddleware('userId'),
         new ValidateDtoMiddleware(CreateOfferDto)
       ]
     });
@@ -51,21 +52,24 @@ export class OfferController extends BaseController {
       path: '/premium/:city',
       method: HttpMethod.Get,
       handler: this.indexPremiumCity,
-      middlewares: [new ValidateObjectIdQueryMiddleware('userId')]
+      middlewares: [
+        new ValidateObjectIdQueryMiddleware('userId')
+      ]
     });
     this.addRoute({
       path: '/favorite',
       method: HttpMethod.Get,
       handler: this.indexFavorite,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),]
+        new AuthMiddleware('userId'),
+      ]
     });
     this.addRoute({
       path: '/favorite/:offerId',
       method: HttpMethod.Post,
       handler: this.createFavorite,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
+        new AuthMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -75,7 +79,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Delete,
       handler: this.destroyFavorite,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
+        new AuthMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -95,7 +99,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Patch,
       handler: this.update,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
+        new AuthMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
         new ValidateDtoMiddleware(UpdateOfferDto),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
@@ -106,7 +110,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Delete,
       handler: this.destroy,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
+        new AuthMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -131,15 +135,7 @@ export class OfferController extends BaseController {
     { body, query }: Request<RequestParams, unknown, CreateOfferDto, QueryUserId>,
     res: Response
   ): Promise<void> {
-    const userId = query.userId ? String(query.userId) : undefined;
-
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'To create posts you need to log in',
-        'OfferController'
-      );
-    }
+    const userId = String(query.userId);
 
     const result = await this.offerService.create(body, userId);
     this.created(res, result);
@@ -162,15 +158,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId ? String(query.userId) : undefined;
-
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'UserId required params.',
-        'OfferController'
-      );
-    }
+    const userId = String(query.userId);
 
     const result = await this.offerService.updateById(offerId, body, userId);
 
@@ -182,15 +170,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId ? String(query.userId) : undefined;
-
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'UserId required params.',
-        'OfferController'
-      );
-    }
+    const userId = String(query.userId);
 
     const result = await this.offerService.deleteById(offerId, userId);
     const destroyComment = await this.commentService.deleteByOfferId(offerId);
@@ -223,15 +203,8 @@ export class OfferController extends BaseController {
     { query }: Request<RequestParams, unknown, RequestBody, QueryUserId>,
     res: Response
   ): Promise<void> {
-    const userId = query.userId ? String(query.userId) : undefined;
+    const userId = String(query.userId);
 
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'UserId required params for find favorite.',
-        'OfferController'
-      );
-    }
     const result = await this.offerService.findFavoriteOffer(userId);
 
     const responseData = fillDTO(OfferRdo, result);
@@ -243,15 +216,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId ? String(query.userId) : undefined;
-
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'UserId required params.',
-        'OfferController'
-      );
-    }
+    const userId = String(query.userId);
 
     const result = await this.userOfferFavoriteService.addToFavorites(userId, offerId);
 
@@ -263,15 +228,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId ? String(query.userId) : undefined;
-
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'UserId required params.',
-        'OfferController'
-      );
-    }
+    const userId = String(query.userId);
 
     const result = await this.userOfferFavoriteService.removeFromFavorites(userId, offerId);
 

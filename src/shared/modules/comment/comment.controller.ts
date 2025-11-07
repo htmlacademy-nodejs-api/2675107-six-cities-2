@@ -1,9 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
-import { BaseController, HttpError, HttpMethod, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
+import { BaseController, HttpMethod, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
-import { StatusCodes } from 'http-status-codes';
 import { CommentService } from './comment-service.interface.js';
 import { OfferService } from '../offer/offer-service.interface.js';
 import { ParamOfferId } from '../offer/request/param-offerid.type.js';
@@ -14,6 +13,7 @@ import { fillDTO } from '../../helpers/common.js';
 import { IndexCommentRdo } from './rdo/index-comment.rdo.js';
 import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
 import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
+import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 
 
 @injectable()
@@ -31,7 +31,7 @@ export class CommentController extends BaseController {
       method: HttpMethod.Post,
       handler: this.create,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
+        new AuthMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -53,16 +53,7 @@ export class CommentController extends BaseController {
     res: Response,
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId ? String(query.userId) : undefined;
-
-
-    if(!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'To create comment you need to log in',
-        'CommentsController'
-      );
-    }
+    const userId = String(query.userId);
 
     const result = await this.commentService.create(body, offerId, userId);
 

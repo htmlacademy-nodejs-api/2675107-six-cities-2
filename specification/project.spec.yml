@@ -153,6 +153,7 @@ paths:
       parameters:
       - name: userId
         in: query
+        required: true
         schema:
           type: string
       responses:
