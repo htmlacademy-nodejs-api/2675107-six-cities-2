@@ -97,6 +97,7 @@ export class OfferController extends BaseController {
       middlewares: [
         new ValidateObjectIdQueryMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
+        new ValidateDtoMiddleware(UpdateOfferDto),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
     });
