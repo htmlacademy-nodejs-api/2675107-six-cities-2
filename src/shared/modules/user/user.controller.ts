@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
-import { BaseController, HttpError, HttpMethod, UploadFileMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
+import { BaseController, HttpError, HttpMethod, UploadFileMiddleware, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
 import { CreateUserRequest } from './request/create-user-request.type.js';
@@ -14,6 +14,9 @@ import { LoginUserRequest } from './request/login-user-request.type.js';
 import { RequestParams } from '../../libs/express/types/request.params.type.js';
 import { RequestBody } from '../../libs/express/types/request-body.type.js';
 import { QueryUserId } from '../offer/request/query-userid.type.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { LoginUserDto } from './dto/login-user.dto.js';
+import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -25,9 +28,29 @@ export class UserController extends BaseController {
     super(logger);
     this.logger.info('Register routes for UserController…');
 
-    this.addRoute({ path: '/register', method: HttpMethod.Post, handler: this.create });
-    this.addRoute({ path: '/login', method: HttpMethod.Post, handler: this.login });
-    this.addRoute({ path: '/login', method: HttpMethod.Get, handler: this.isAuthorized });
+    this.addRoute({
+      path: '/register',
+      method: HttpMethod.Post,
+      handler: this.create,
+      middlewares: [
+        new ValidateDtoMiddleware(CreateUserDto)
+      ]
+    });
+    this.addRoute({
+      path: '/login',
+      method: HttpMethod.Post,
+      handler: this.login,
+      middlewares: [
+        new ValidateDtoMiddleware(LoginUserDto)
+      ]
+    });
+    this.addRoute({
+      path: '/login',
+      method: HttpMethod.Get,
+      handler: this.isAuthorized,
+      middlewares: [
+        new ValidateObjectIdQueryMiddleware('userId')
+      ] });
     this.addRoute({
       path: '/:userId/avatar',
       method: HttpMethod.Post,
@@ -70,6 +93,7 @@ export class UserController extends BaseController {
     res: Response,
   ): Promise<void> {
     const user = query.userId ? String(query.userId) : undefined;
+
     const result = await this.userService.isAuthorized(user);
     this.ok(res, result);
   }

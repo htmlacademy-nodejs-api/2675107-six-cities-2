@@ -1,5 +1,10 @@
 export type UserType = 'ordinary' | 'pro';
 
+export enum UserTypeEnum {
+  ordinary = 'ordinary',
+  pro = 'pro',
+}
+
 export type User = {
   firstname: string; // Имя пользователя (1-15 символов)
   email: string; // Валидный email, уникальный

@@ -1,11 +1,9 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
-import { BaseController, HttpError, HttpMethod } from '../../libs/express/index.js';
+import { BaseController, HttpMethod, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { Component } from '../../types/index.js';
-import { StatusCodes } from 'http-status-codes';
 import { CommentService } from './comment-service.interface.js';
-import { Types } from 'mongoose';
 import { OfferService } from '../offer/offer-service.interface.js';
 import { ParamOfferId } from '../offer/request/param-offerid.type.js';
 import { CreateCommentDto } from './dto/create-comment.dto.js';
@@ -13,6 +11,9 @@ import { QueryUserId } from '../offer/request/query-userid.type.js';
 import { RequestBody } from '../../libs/express/types/request-body.type.js';
 import { fillDTO } from '../../helpers/common.js';
 import { IndexCommentRdo } from './rdo/index-comment.rdo.js';
+import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
+import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
+import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 
 
 @injectable()
@@ -25,8 +26,26 @@ export class CommentController extends BaseController {
     super(logger);
     this.logger.info('Register routes for UserController…');
 
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Post, handler: this.create });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Get, handler: this.index });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Post,
+      handler: this.create,
+      middlewares: [
+        new AuthMiddleware('userId'),
+        new ValidateObjectIdMiddleware('offerId'),
+        new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+      ]
+    });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Get,
+      handler: this.index,
+      middlewares: [
+        new ValidateObjectIdQueryMiddleware('userId'),
+        new ValidateObjectIdMiddleware('offerId'),
+        new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+      ]
+    });
   }
 
   public async create(
@@ -34,25 +53,9 @@ export class CommentController extends BaseController {
     res: Response,
   ): Promise<void> {
     const { offerId } = params;
-    const userId = query.userId;
+    const userId = String(query.userId);
 
-    if (!Types.ObjectId.isValid(offerId) || !offerId) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'Invalid offer ID format.',
-        'CommentController'
-      );
-    }
-
-    if(!Types.ObjectId.isValid(String(userId)) || !userId) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'UserId required params.',
-        'CommentController'
-      );
-    }
-
-    const result = await this.commentService.create(body, offerId, String(userId));
+    const result = await this.commentService.create(body, offerId, userId);
 
     await this.offerService.incCommentCountAndUpdateRating(offerId, result.rating);
 
@@ -65,13 +68,6 @@ export class CommentController extends BaseController {
   ): Promise<void> {
     const { offerId } = params;
 
-    if (!Types.ObjectId.isValid(offerId) || !offerId) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'Invalid offer ID format.',
-        'CommentController'
-      );
-    }
     const result = await this.commentService.findByOfferId(offerId);
 
     const responseData = fillDTO(IndexCommentRdo, result);

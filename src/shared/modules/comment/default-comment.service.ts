@@ -24,7 +24,7 @@ export class DefaultCommentService implements CommentService {
 
     const comment = await this.commentModel.create(commentData);
 
-    return comment.populate(['userId', 'offerId']);
+    return comment;
   }
 
   public async findByOfferId(offerId: string): Promise<DocumentType<CommentEntity>[]> {
@@ -43,5 +43,13 @@ export class DefaultCommentService implements CommentService {
 
     this.logger.info(`Комментарии для поста ${offerId} удаленны успешно`);
     return `Удаленно ${result.deletedCount} комментариев поста`;
+  }
+
+  public async exists(documentId: string): Promise<boolean> {
+    if(!documentId) {
+      return false;
+    }
+    const result = await this.commentModel.exists({ _id: documentId }).lean();
+    return result !== null;
   }
 }
