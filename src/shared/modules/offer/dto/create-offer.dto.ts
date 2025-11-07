@@ -4,7 +4,6 @@ import { IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsString, Max, MaxLength, 
 import { CreateOfferValidationMessage } from './create-offer.message.js';
 
 export class CreateOfferDto {
-  // НЕОБЯЗАТ ПОЛЕ @IsOptional()
   @MinLength(10, { message: CreateOfferValidationMessage.title.minLength })
   @MaxLength(100, { message: CreateOfferValidationMessage.title.maxLength })
   @IsString({ message: CreateOfferValidationMessage.title.invalidFormat })
