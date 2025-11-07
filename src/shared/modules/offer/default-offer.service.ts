@@ -37,15 +37,11 @@ export class DefaultOfferService implements OfferService {
 
   public async findById(offerId: string, userId?: string): Promise<DocumentType<OfferEntity>> {
 
-    const offerObjId = new Types.ObjectId(offerId);
-
     const pipeline: PipelineStage[] = [
-      { $match: { _id: offerObjId } }
+      { $match: { _id: new Types.ObjectId(offerId) } }
     ];
 
-    if (userId && Types.ObjectId.isValid(userId)) {
-      const userObjId = new Types.ObjectId(userId);
-
+    if (userId) {
       pipeline.push(
         {
           $lookup: {
@@ -57,7 +53,7 @@ export class DefaultOfferService implements OfferService {
                   $expr: {
                     $and: [
                       { $eq: ['$offerId', '$$offerId'] },
-                      { $eq: ['$userId', userObjId] }
+                      { $eq: ['$userId', new Types.ObjectId(userId)] }
                     ]
                   }
                 }
@@ -79,13 +75,6 @@ export class DefaultOfferService implements OfferService {
 
     const result = await this.offerModel.aggregate(pipeline).exec();
 
-    if (!result || result.length === 0) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        'OfferById not found.',
-        'OfferController'
-      );
-    }
     const offer = result[0];
 
     this.logger.info(`Offer ${offer.title} show`);
@@ -106,39 +95,35 @@ export class DefaultOfferService implements OfferService {
     ];
 
     if (userId) {
-      if (Types.ObjectId.isValid(userId)) {
-        const userObjId = new Types.ObjectId(userId);
-
-        pipeline.push(
-          {
-            $lookup: {
-              from: 'user-offer-favorite',
-              let: { offerId: '$_id' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$offerId', '$$offerId'] },
-                        { $eq: ['$userId', userObjId] }
-                      ]
-                    }
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'user-offer-favorite',
+            let: { offerId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$offerId', '$$offerId'] },
+                      { $eq: ['$userId', new Types.ObjectId(userId)] }
+                    ]
                   }
                 }
-              ],
-              as: 'favoriteInfo'
-            }
-          },
-          {
-            $addFields: {
-              isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
-            }
-          },
-          {
-            $project: { favoriteInfo: 0 }
+              }
+            ],
+            as: 'favoriteInfo'
           }
-        );
-      }
+        },
+        {
+          $addFields: {
+            isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
+          }
+        },
+        {
+          $project: { favoriteInfo: 0 }
+        }
+      );
     }
 
     const result = await this.offerModel.aggregate(pipeline).exec();
@@ -314,10 +299,11 @@ export class DefaultOfferService implements OfferService {
   }
 
   public async exists(documentId: string): Promise<boolean> {
-    if(documentId) {
-      return true;
+    if(!documentId) {
+      return false;
     }
-    return false;
+    const result = await this.offerModel.exists({ _id: documentId }).lean();
+    return result !== null;
   }
 
   public compareUsers(

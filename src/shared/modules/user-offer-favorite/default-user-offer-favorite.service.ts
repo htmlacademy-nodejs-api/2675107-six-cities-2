@@ -23,7 +23,7 @@ export class DefaultUserOfferFavoriteService implements UserOfferFavoriteService
 
     if (existing) {
       throw new HttpError(
-        StatusCodes.NOT_FOUND,
+        StatusCodes.CONFLICT,
         `Offer ${offerId} is already in favorites for user ${userId}`,
         'userOfferFavoriteController'
       );
@@ -44,7 +44,7 @@ export class DefaultUserOfferFavoriteService implements UserOfferFavoriteService
 
     if (!existing) {
       throw new HttpError(
-        StatusCodes.NOT_FOUND,
+        StatusCodes.CONFLICT,
         `Offer ${offerId} not found in favorites for user ${userId}`,
         'userOfferFavoriteController'
       );
