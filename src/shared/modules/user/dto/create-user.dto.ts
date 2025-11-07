@@ -12,13 +12,13 @@ export class CreateUserDto {
   public avatarPath: string | '';
 
   @IsString({ message: CreateUserValidationMessage.firstname.invalidFormat })
-  @MinLength(1, { message: CreateUserValidationMessage.firstname.maxLength })
-  @MaxLength(15, { message: CreateUserValidationMessage.firstname.minLength })
+  @MinLength(1, { message: CreateUserValidationMessage.firstname.minLength })
+  @MaxLength(15, { message: CreateUserValidationMessage.firstname.maxLength })
   public firstname: string;
 
   @IsString({ message: CreateUserValidationMessage.password.invalidFormat })
-  @MinLength(6, { message: CreateUserValidationMessage.password.maxLength })
-  @MaxLength(12, { message: CreateUserValidationMessage.password.minLength })
+  @MinLength(6, { message: CreateUserValidationMessage.password.minLength })
+  @MaxLength(12, { message: CreateUserValidationMessage.password.maxLength })
   public password: string;
 
   @IsEnum(UserTypeEnum, { message: CreateUserValidationMessage.userType.invalid })
