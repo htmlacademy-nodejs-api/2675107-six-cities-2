@@ -10,10 +10,8 @@ import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { RequestBody } from '../../libs/express/types/request-body.type.js';
 import { fillDTO } from '../../helpers/common.js';
 import { IndexCommentRdo } from './rdo/index-comment.rdo.js';
-import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
 import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
 import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
-// import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 
 
 @injectable()
@@ -41,7 +39,6 @@ export class CommentController extends BaseController {
       method: HttpMethod.Get,
       handler: this.index,
       middlewares: [
-        new ValidateObjectIdQueryMiddleware('userId'),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
