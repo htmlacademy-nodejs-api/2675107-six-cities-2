@@ -107,8 +107,20 @@ export class UserController extends BaseController {
   }
 
   public async uploadAvatar(req: Request, res: Response) {
-    this.created(res, {
-      filepath: req.file?.path
-    });
+    const filename = req.file?.filename;
+    const userId = req.params.userId;
+
+    if (!filename) {
+      throw new HttpError(
+        StatusCodes.CONFLICT,
+        'File not upload.',
+        'UserController'
+      );
+    }
+    const filepath = `/upload/${filename}`;
+
+    await this.userService.updateAvatar(userId, filepath);
+
+    this.created(res, { filepath });
   }
 }
