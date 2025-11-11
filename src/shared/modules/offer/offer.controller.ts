@@ -44,7 +44,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Post,
       handler: this.create,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
         new ValidateDtoMiddleware(CreateOfferDto)
       ]
     });
@@ -61,7 +61,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Get,
       handler: this.indexFavorite,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
       ]
     });
     this.addRoute({
@@ -69,7 +69,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Post,
       handler: this.createFavorite,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -79,7 +79,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Delete,
       handler: this.destroyFavorite,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -99,7 +99,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Patch,
       handler: this.update,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
         new ValidateDtoMiddleware(UpdateOfferDto),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
@@ -110,7 +110,7 @@ export class OfferController extends BaseController {
       method: HttpMethod.Delete,
       handler: this.destroy,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]

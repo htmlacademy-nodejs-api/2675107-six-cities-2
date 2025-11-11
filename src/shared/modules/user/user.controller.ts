@@ -11,9 +11,6 @@ import { StatusCodes } from 'http-status-codes';
 import { fillDTO } from '../../helpers/common.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { LoginUserRequest } from './request/login-user-request.type.js';
-import { RequestParams } from '../../libs/express/types/request.params.type.js';
-import { RequestBody } from '../../libs/express/types/request-body.type.js';
-import { QueryUserId } from '../offer/request/query-userid.type.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { LoginUserDto } from './dto/login-user.dto.js';
 import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
@@ -50,7 +47,7 @@ export class UserController extends BaseController {
     this.addRoute({
       path: '/login',
       method: HttpMethod.Get,
-      handler: this.isAuthorized,
+      handler: this.checkAuthenticate,
       middlewares: [
         new ValidateObjectIdQueryMiddleware('userId')
       ] });
@@ -96,14 +93,18 @@ export class UserController extends BaseController {
     this.ok(res, responseData);
   }
 
-  public async isAuthorized (
-    { query }: Request<RequestParams, unknown, RequestBody, QueryUserId>,
-    res: Response,
-  ): Promise<void> {
-    const user = query.userId ? String(query.userId) : undefined;
+  public async checkAuthenticate({ tokenPayload: { email }}: Request, res: Response) {
+    const foundedUser = await this.userService.findByEmail(email);
 
-    const result = await this.userService.isAuthorized(user);
-    this.ok(res, result);
+    if (! foundedUser) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'Unauthorized',
+        'UserController'
+      );
+    }
+
+    this.ok(res, fillDTO(LoggedUserRdo, foundedUser));
   }
 
   public async uploadAvatar(req: Request, res: Response) {

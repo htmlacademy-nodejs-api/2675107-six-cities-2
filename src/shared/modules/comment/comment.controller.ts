@@ -7,13 +7,13 @@ import { CommentService } from './comment-service.interface.js';
 import { OfferService } from '../offer/offer-service.interface.js';
 import { ParamOfferId } from '../offer/request/param-offerid.type.js';
 import { CreateCommentDto } from './dto/create-comment.dto.js';
-import { QueryUserId } from '../offer/request/query-userid.type.js';
 import { RequestBody } from '../../libs/express/types/request-body.type.js';
 import { fillDTO } from '../../helpers/common.js';
 import { IndexCommentRdo } from './rdo/index-comment.rdo.js';
 import { ValidateObjectIdQueryMiddleware } from '../../libs/express/middleware/validate-objectid-query.middleware.js';
 import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
 import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
+// import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 
 
 @injectable()
@@ -31,7 +31,7 @@ export class CommentController extends BaseController {
       method: HttpMethod.Post,
       handler: this.create,
       middlewares: [
-        new AuthMiddleware('userId'),
+        new AuthMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
@@ -49,13 +49,12 @@ export class CommentController extends BaseController {
   }
 
   public async create(
-    { body, params, query}: Request<ParamOfferId, unknown, CreateCommentDto, QueryUserId>,
+    { body, params, tokenPayload}: Request<ParamOfferId, unknown, CreateCommentDto>,
     res: Response,
   ): Promise<void> {
     const { offerId } = params;
-    const userId = String(query.userId);
 
-    const result = await this.commentService.create(body, offerId, userId);
+    const result = await this.commentService.create(body, offerId, tokenPayload.id);
 
     await this.offerService.incCommentCountAndUpdateRating(offerId, result.rating);
 
