@@ -7,6 +7,8 @@ import { Component } from '../../types/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { HttpError } from '../../libs/express/index.js';
 import { StatusCodes } from 'http-status-codes';
+import fs from 'node:fs';
+import path from 'node:path';
 
 @injectable()
 export class DefaultUserService implements UserService {
@@ -65,13 +67,10 @@ export class DefaultUserService implements UserService {
     return 'token';
   }
 
-  public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity>> {
+  public async isAuthorized(userId?: string): Promise<DocumentType<UserEntity> | string> {
+
     if (!userId) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'User not authorized.',
-        'UserController'
-      );
+      return 'Пользователь не авторизован';
     }
 
     const user = await this.userModel.findById(userId).exec();
@@ -85,6 +84,33 @@ export class DefaultUserService implements UserService {
     }
 
     this.logger.info(`User ${user.email} successfully auth in`);
+    return user;
+  }
+
+  public async updateAvatar(userId: string, filepath: string): Promise<DocumentType<UserEntity>> {
+
+    const user = await this.userModel.findById(userId).exec();
+
+    if (!user) {
+      throw new HttpError(
+        StatusCodes.NOT_FOUND ,
+        'User not found.',
+        'UserController'
+      );
+    }
+
+    if (user.avatarPath) {
+      const oldPath = path.resolve(`.${user.avatarPath}`);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    user.avatarPath = filepath;
+
+    await user.save();
+
+    this.logger.info(`User ${user.email} upload avatar`);
     return user;
   }
 }
