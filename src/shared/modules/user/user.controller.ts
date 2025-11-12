@@ -116,10 +116,9 @@ export class UserController extends BaseController {
         'UserController'
       );
     }
-    const filepath = `/upload/${filename}`;
 
-    await this.userService.updateAvatar(userId, filepath);
+    const user = await this.userService.updateAvatar(userId, filename);
 
-    this.created(res, { filepath });
+    this.created(res, { avatarPath: user.avatarPath });
   }
 }
