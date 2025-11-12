@@ -83,6 +83,16 @@ export class OfferController extends BaseController {
       ]
     });
     this.addRoute({
+      path: '/:offerId/previewImage',
+      method: HttpMethod.Post,
+      handler: this.uploadImage,
+      middlewares: [
+        new AuthMiddleware(),
+        new ValidateObjectIdMiddleware('offerId'),
+        new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'previewImage'),
+      ]
+    });
+    this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Get,
       handler: this.show,
@@ -112,16 +122,6 @@ export class OfferController extends BaseController {
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
     });
-    this.addRoute({
-      path: '/:offerId/previewImage',
-      method: HttpMethod.Post,
-      handler: this.uploadImage,
-      middlewares: [
-        new AuthMiddleware(),
-        new ValidateObjectIdMiddleware('offerId'),
-        new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'previewImage'),
-      ]
-    });
   }
 
   public async index(
@@ -145,7 +145,7 @@ export class OfferController extends BaseController {
     const userId = tokenPayload.id;
 
     const result = await this.offerService.create(body, userId);
-    this.created(res, result);
+    this.created(res, result.toObject());
   }
 
   public async show(
