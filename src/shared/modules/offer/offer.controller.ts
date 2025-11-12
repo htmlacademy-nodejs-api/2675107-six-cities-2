@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { Logger } from '../../libs/logger/index.js';
 import { CityName, Component } from '../../types/index.js';
-import { BaseController, HttpMethod, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
+import { BaseController, HttpMethod, UploadFileMiddleware, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { OfferService } from './offer-service.interface.js';
 import { fillDTO } from '../../helpers/common.js';
 import { OfferRdo } from './rdo/index-offer.rdo.js';
@@ -18,6 +18,9 @@ import { QueryIndexOffer } from './request/query-index-offer.type.js';
 import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
 import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 import { ShowOfferRdo } from './rdo/show-offer.rdo.js';
+import { Config } from '../../libs/config/config.interface.js';
+import { RestSchema } from '../../libs/config/rest.schema.js';
+import { UploadPreviewImageRdo } from './rdo/upload-preview-image.rdo.js';
 
 @injectable()
 export class OfferController extends BaseController {
@@ -26,6 +29,7 @@ export class OfferController extends BaseController {
     @inject(Component.OfferService) private readonly offerService: OfferService,
     @inject(Component.CommentService) private readonly commentService: CommentService,
     @inject(Component.UserOfferFavoriteService) private readonly userOfferFavoriteService: UserOfferFavoriteService,
+    @inject(Component.Config) private readonly configService: Config<RestSchema>,
   ) {
     super(logger);
 
@@ -106,6 +110,16 @@ export class OfferController extends BaseController {
         new AuthMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+      ]
+    });
+    this.addRoute({
+      path: '/:offerId/previewImage',
+      method: HttpMethod.Post,
+      handler: this.uploadImage,
+      middlewares: [
+        new AuthMiddleware(),
+        new ValidateObjectIdMiddleware('offerId'),
+        new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'previewImage'),
       ]
     });
   }
@@ -220,5 +234,13 @@ export class OfferController extends BaseController {
     const result = await this.userOfferFavoriteService.removeFromFavorites(userId, offerId);
 
     this.ok(res, result);
+  }
+
+  public async uploadImage({ params, file, tokenPayload } : Request<ParamOfferId>, res: Response) {
+    const { offerId } = params;
+    const updateDto = { previewImage: file?.filename };
+    const userId = tokenPayload.id;
+    await this.offerService.updateById(offerId, updateDto, userId);
+    this.created(res, fillDTO(UploadPreviewImageRdo, updateDto));
   }
 }

@@ -10,6 +10,7 @@ import { PipelineStage, Types } from 'mongoose';
 import { CityService } from '../city/city-service.interface.js';
 import { HttpError } from '../../libs/express/index.js';
 import { StatusCodes } from 'http-status-codes';
+import { DEFAULT_OFFER_FILE_NAME } from './offer.constant.js';
 
 @injectable()
 export class DefaultOfferService implements OfferService {
@@ -24,6 +25,8 @@ export class DefaultOfferService implements OfferService {
     const offerData = {
       ...dto,
       postDate: new Date(),
+      previewImage: DEFAULT_OFFER_FILE_NAME,
+      photos: [DEFAULT_OFFER_FILE_NAME],
       userId: userId,
       rating: 0.0,
       commentsCount: 0,
@@ -149,7 +152,7 @@ export class DefaultOfferService implements OfferService {
 
   }
 
-  public async updateById(offerId: string, dto: UpdateOfferDto, userId: string): Promise<DocumentType<OfferEntity> | null> {
+  public async updateById(offerId: string, dto: Partial<UpdateOfferDto>, userId: string): Promise<DocumentType<OfferEntity> | null> {
 
     const existingOffer = await this.offerModel.findById(offerId).exec();
 
