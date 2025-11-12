@@ -9,6 +9,7 @@ import { HttpError } from '../../libs/express/index.js';
 import { StatusCodes } from 'http-status-codes';
 import fs from 'node:fs';
 import path from 'node:path';
+import { DEFAULT_AVATAR_FILE_NAME } from './user.constant.js';
 
 @injectable()
 export class DefaultUserService implements UserService {
@@ -19,7 +20,7 @@ export class DefaultUserService implements UserService {
 
   public async create(dto: CreateUserDto, salt: string): Promise<DocumentType<UserEntity>> {
 
-    const user = new UserEntity(dto);
+    const user = new UserEntity({...dto, avatarPath: DEFAULT_AVATAR_FILE_NAME});
     user.setPassword(dto.password, salt);
 
     const result = await this.userModel.create(user);
