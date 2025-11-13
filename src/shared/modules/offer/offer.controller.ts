@@ -236,11 +236,12 @@ export class OfferController extends BaseController {
     this.ok(res, result);
   }
 
-  public async uploadImage({ params, file, tokenPayload } : Request<ParamOfferId>, res: Response) {
-    const { offerId } = params;
-    const updateDto = { previewImage: file?.filename };
-    const userId = tokenPayload.id;
-    await this.offerService.updateById(offerId, updateDto, userId);
-    this.created(res, fillDTO(UploadPreviewImageRdo, updateDto));
+  public async uploadImage(req: Request, res: Response) {
+    const { offerId } = req.params;
+    const userId = req.tokenPayload.id;
+    const filename = req.file?.filename;
+
+    const updatedOffer = await this.offerService.updatePreviewImage(offerId, filename, userId);
+    this.created(res, fillDTO(UploadPreviewImageRdo, { previewImage: updatedOffer.previewImage }));
   }
 }

@@ -89,29 +89,32 @@ export class DefaultUserService implements UserService {
   }
 
   public async updateAvatar(userId: string, filepath: string): Promise<DocumentType<UserEntity>> {
-
     const user = await this.userModel.findById(userId).exec();
 
     if (!user) {
       throw new HttpError(
-        StatusCodes.NOT_FOUND ,
+        StatusCodes.NOT_FOUND,
         'User not found.',
         'UserController'
       );
     }
 
     if (user.avatarPath) {
-      const oldPath = path.resolve(`.${user.avatarPath}`);
+      const relativePath = user.avatarPath.startsWith('/upload/')
+        ? `.${user.avatarPath}`
+        : `./upload/${user.avatarPath}`;
+
+      const oldPath = path.resolve(relativePath);
+
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
       }
     }
 
     user.avatarPath = filepath;
-
     await user.save();
 
-    this.logger.info(`User ${user.email} upload avatar`);
+    this.logger.info(`User ${user.email} uploaded new avatar`);
     return user;
   }
 }
