@@ -340,6 +340,36 @@ export class DefaultOfferService implements OfferService {
     return offer;
   }
 
+  public async updatePhotos(
+    offerId: string,
+    newFilepaths: string[],
+    userId: string
+  ): Promise<DocumentType<OfferEntity>> {
+
+    const offer = await this.offerModel.findById(offerId).exec();
+    this.existsEntity(offer);
+    this.compareUsers(offer.userId.toString(), userId.toString());
+
+    if (offer.photos && offer.photos.length > 0) {
+      for (const old of offer.photos) {
+        const relativePath = old.startsWith('/upload/')
+          ? `.${old}`
+          : `./upload/${old}`;
+        const oldPath = path.resolve(relativePath);
+
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+    }
+
+    offer.photos = newFilepaths;
+    await offer.save();
+
+    this.logger.info(`Offer ${offerId} updated photos by user ${userId}`);
+    return offer;
+  }
+
   public compareUsers(
     offerUserId: string | Types.ObjectId,
     userId: string | Types.ObjectId
