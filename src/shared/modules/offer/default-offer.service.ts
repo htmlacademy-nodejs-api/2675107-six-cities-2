@@ -10,6 +10,9 @@ import { PipelineStage, Types } from 'mongoose';
 import { CityService } from '../city/city-service.interface.js';
 import { HttpError } from '../../libs/express/index.js';
 import { StatusCodes } from 'http-status-codes';
+import { DEFAULT_OFFER_FILE_NAME } from './offer.constant.js';
+import path from 'node:path';
+import fs from 'node:fs';
 
 @injectable()
 export class DefaultOfferService implements OfferService {
@@ -24,6 +27,8 @@ export class DefaultOfferService implements OfferService {
     const offerData = {
       ...dto,
       postDate: new Date(),
+      previewImage: DEFAULT_OFFER_FILE_NAME,
+      photos: [DEFAULT_OFFER_FILE_NAME],
       userId: userId,
       rating: 0.0,
       commentsCount: 0,
@@ -149,7 +154,7 @@ export class DefaultOfferService implements OfferService {
 
   }
 
-  public async updateById(offerId: string, dto: UpdateOfferDto, userId: string): Promise<DocumentType<OfferEntity> | null> {
+  public async updateById(offerId: string, dto: Partial<UpdateOfferDto>, userId: string): Promise<DocumentType<OfferEntity> | null> {
 
     const existingOffer = await this.offerModel.findById(offerId).exec();
 
@@ -304,6 +309,65 @@ export class DefaultOfferService implements OfferService {
     }
     const result = await this.offerModel.exists({ _id: documentId }).lean();
     return result !== null;
+  }
+
+  public async updatePreviewImage(
+    offerId: string,
+    newFilepath: string,
+    userId: string
+  ): Promise<DocumentType<OfferEntity>> {
+
+    const offer = await this.offerModel.findById(offerId).exec();
+    this.existsEntity(offer);
+    this.compareUsers(offer.userId.toString(), userId.toString());
+
+    if (offer.previewImage) {
+      const relativePath = offer.previewImage.startsWith('/upload/')
+        ? `.${offer.previewImage}`
+        : `./upload/${offer.previewImage}`;
+
+      const oldPath = path.resolve(relativePath);
+
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    offer.previewImage = newFilepath;
+    await offer.save();
+
+    this.logger.info(`Offer ${offerId} updated preview image by user ${userId}`);
+    return offer;
+  }
+
+  public async updatePhotos(
+    offerId: string,
+    newFilepaths: string[],
+    userId: string
+  ): Promise<DocumentType<OfferEntity>> {
+
+    const offer = await this.offerModel.findById(offerId).exec();
+    this.existsEntity(offer);
+    this.compareUsers(offer.userId.toString(), userId.toString());
+
+    if (offer.photos && offer.photos.length > 0) {
+      for (const old of offer.photos) {
+        const relativePath = old.startsWith('/upload/')
+          ? `.${old}`
+          : `./upload/${old}`;
+        const oldPath = path.resolve(relativePath);
+
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+    }
+
+    offer.photos = newFilepaths;
+    await offer.save();
+
+    this.logger.info(`Offer ${offerId} updated photos by user ${userId}`);
+    return offer;
   }
 
   public compareUsers(

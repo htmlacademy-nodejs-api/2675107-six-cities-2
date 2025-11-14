@@ -3,10 +3,6 @@ export const CreateUserValidationMessage = {
   email: {
     invalid: 'Incorrect email.'
   },
-  avatarPath: {
-    invalidFormat: 'avatarPath must be an string',
-    invalid: 'Avatar must be a .jpg or .png image'
-  },
   firstname: {
     invalidFormat: 'firstname must be an string',
     minLength: 'Minimum firstname length must be 1',

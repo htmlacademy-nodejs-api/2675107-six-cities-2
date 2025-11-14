@@ -8,6 +8,7 @@ export class UploadFileMiddleware implements Middleware {
   constructor(
     private uploadDirectory: string,
     private fieldName: string,
+    private multiple: boolean = false
   ) {}
 
   public async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -20,9 +21,13 @@ export class UploadFileMiddleware implements Middleware {
       }
     });
 
-    const uploadSingleFileMiddleware = multer({ storage })
-      .single(this.fieldName);
+    const uploadMiddleware = multer({ storage });
 
-    uploadSingleFileMiddleware(req, res, next);
+    const handler = this.multiple
+      ? uploadMiddleware.array(this.fieldName, 6) // максимум 6 файлов
+      : uploadMiddleware.single(this.fieldName);
+
+    handler(req, res, next);
   }
 }
+

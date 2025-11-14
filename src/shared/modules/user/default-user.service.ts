@@ -9,6 +9,7 @@ import { HttpError } from '../../libs/express/index.js';
 import { StatusCodes } from 'http-status-codes';
 import fs from 'node:fs';
 import path from 'node:path';
+import { DEFAULT_AVATAR_FILE_NAME } from './user.constant.js';
 
 @injectable()
 export class DefaultUserService implements UserService {
@@ -19,7 +20,7 @@ export class DefaultUserService implements UserService {
 
   public async create(dto: CreateUserDto, salt: string): Promise<DocumentType<UserEntity>> {
 
-    const user = new UserEntity(dto);
+    const user = new UserEntity({...dto, avatarPath: DEFAULT_AVATAR_FILE_NAME});
     user.setPassword(dto.password, salt);
 
     const result = await this.userModel.create(user);
@@ -88,29 +89,32 @@ export class DefaultUserService implements UserService {
   }
 
   public async updateAvatar(userId: string, filepath: string): Promise<DocumentType<UserEntity>> {
-
     const user = await this.userModel.findById(userId).exec();
 
     if (!user) {
       throw new HttpError(
-        StatusCodes.NOT_FOUND ,
+        StatusCodes.NOT_FOUND,
         'User not found.',
         'UserController'
       );
     }
 
     if (user.avatarPath) {
-      const oldPath = path.resolve(`.${user.avatarPath}`);
+      const relativePath = user.avatarPath.startsWith('/upload/')
+        ? `.${user.avatarPath}`
+        : `./upload/${user.avatarPath}`;
+
+      const oldPath = path.resolve(relativePath);
+
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
       }
     }
 
     user.avatarPath = filepath;
-
     await user.save();
 
-    this.logger.info(`User ${user.email} upload avatar`);
+    this.logger.info(`User ${user.email} uploaded new avatar`);
     return user;
   }
 }

@@ -84,11 +84,8 @@ export class UserController extends BaseController {
   ): Promise<void> {
     const user = await this.authService.verify(body);
     const token = await this.authService.authenticate(user);
-    const responseData = fillDTO(LoggedUserRdo, {
-      email: user.email,
-      token,
-    });
-    this.ok(res, responseData);
+    const responseData = fillDTO(LoggedUserRdo, user);
+    this.ok(res, Object.assign(responseData, {token }));
   }
 
   public async checkAuthenticate({ tokenPayload: { email }}: Request, res: Response) {
@@ -116,10 +113,9 @@ export class UserController extends BaseController {
         'UserController'
       );
     }
-    const filepath = `/upload/${filename}`;
 
-    await this.userService.updateAvatar(userId, filepath);
+    const user = await this.userService.updateAvatar(userId, filename);
 
-    this.created(res, { filepath });
+    this.created(res, { avatarPath: user.avatarPath });
   }
 }

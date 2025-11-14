@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { Logger } from '../../libs/logger/index.js';
 import { CityName, Component } from '../../types/index.js';
-import { BaseController, HttpMethod, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
+import { BaseController, HttpError, HttpMethod, UploadFileMiddleware, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/express/index.js';
 import { OfferService } from './offer-service.interface.js';
 import { fillDTO } from '../../helpers/common.js';
 import { OfferRdo } from './rdo/index-offer.rdo.js';
@@ -18,6 +18,10 @@ import { QueryIndexOffer } from './request/query-index-offer.type.js';
 import { DocumentExistsMiddleware } from '../../libs/express/middleware/document-exists.middleware.js';
 import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
 import { ShowOfferRdo } from './rdo/show-offer.rdo.js';
+import { Config } from '../../libs/config/config.interface.js';
+import { RestSchema } from '../../libs/config/rest.schema.js';
+import { UploadPreviewImageRdo } from './rdo/upload-preview-image.rdo.js';
+import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class OfferController extends BaseController {
@@ -26,6 +30,7 @@ export class OfferController extends BaseController {
     @inject(Component.OfferService) private readonly offerService: OfferService,
     @inject(Component.CommentService) private readonly commentService: CommentService,
     @inject(Component.UserOfferFavoriteService) private readonly userOfferFavoriteService: UserOfferFavoriteService,
+    @inject(Component.Config) private readonly configService: Config<RestSchema>,
   ) {
     super(logger);
 
@@ -79,6 +84,28 @@ export class OfferController extends BaseController {
       ]
     });
     this.addRoute({
+      path: '/:offerId/previewImage',
+      method: HttpMethod.Post,
+      handler: this.uploadImage,
+      middlewares: [
+        new AuthMiddleware(),
+        new ValidateObjectIdMiddleware('offerId'),
+        new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'previewImage'),
+      ]
+    });
+
+    this.addRoute({
+      path: '/:offerId/photos',
+      method: HttpMethod.Post,
+      handler: this.uploadPhotos,
+      middlewares: [
+        new AuthMiddleware(),
+        new ValidateObjectIdMiddleware('offerId'),
+        new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'photos', true),
+      ]
+    });
+
+    this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Get,
       handler: this.show,
@@ -131,7 +158,7 @@ export class OfferController extends BaseController {
     const userId = tokenPayload.id;
 
     const result = await this.offerService.create(body, userId);
-    this.created(res, result);
+    this.created(res, result.toObject());
   }
 
   public async show(
@@ -220,5 +247,45 @@ export class OfferController extends BaseController {
     const result = await this.userOfferFavoriteService.removeFromFavorites(userId, offerId);
 
     this.ok(res, result);
+  }
+
+  public async uploadImage(req: Request, res: Response) {
+    const { offerId } = req.params;
+    const userId = req.tokenPayload.id;
+    const filename = req.file?.filename;
+
+    const updatedOffer = await this.offerService.updatePreviewImage(offerId, filename, userId);
+    this.created(res, fillDTO(UploadPreviewImageRdo, { previewImage: updatedOffer.previewImage }));
+  }
+
+  public async uploadPhotos({ params, files, tokenPayload }: Request<ParamOfferId>, res: Response) {
+    const { offerId } = params;
+    const userId = tokenPayload.id;
+
+    // files будет массивом Multer.File[]
+    const fileArray = files as Express.Multer.File[];
+
+    if (!fileArray || fileArray.length === 0) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'No photos uploaded.',
+        'OfferController'
+      );
+    }
+
+    if (fileArray.length > 6) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'Maximum 6 photos allowed.',
+        'OfferController'
+      );
+    }
+
+    const filenames = fileArray.map((file) => file.filename);
+    const updatedOffer = await this.offerService.updatePhotos(offerId, filenames, userId);
+
+    this.created(res, {
+      photos: updatedOffer.photos.map((p) => `/upload/${p}`)
+    });
   }
 }

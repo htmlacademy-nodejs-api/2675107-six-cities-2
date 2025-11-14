@@ -1,6 +1,6 @@
 import { CityEnum, CityName } from '../../../types/city.type.js';
 import { Amenities, AmenitiesEnum, PropertyType, PropertyTypeEnum } from '../../../types/rental-offer.type.js';
-import { IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsObject, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { CreateOfferValidationMessage } from './create-offer.message.js';
 
 export class CreateOfferDto {
@@ -16,12 +16,6 @@ export class CreateOfferDto {
 
   @IsEnum(CityEnum, { message: CreateOfferValidationMessage.city.invalid })
   public city: CityName;
-
-  @IsString({ message: CreateOfferValidationMessage.previewImage.invalidFormat })
-  public previewImage: string;
-
-  @IsArray({ message: CreateOfferValidationMessage.photos.invalidFormat })
-  public photos: string[];
 
   @IsBoolean({ message: CreateOfferValidationMessage.isPremium.invalidFormat })
   public isPremium: boolean;
