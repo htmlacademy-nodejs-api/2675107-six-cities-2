@@ -58,6 +58,15 @@ export class UserController extends BaseController {
         new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'avatar'),
       ]
     });
+
+    this.addRoute({
+      path: '/logout',
+      method: HttpMethod.Post,
+      handler: this.logout,
+      middlewares: [
+        new AuthMiddleware(),
+      ]
+    });
   }
 
   public async create(
@@ -117,5 +126,18 @@ export class UserController extends BaseController {
     const user = await this.userService.updateAvatar(userId, filename);
 
     this.created(res, { avatarPath: user.avatarPath });
+  }
+
+  public async logout(req: Request, res: Response): Promise<void> {
+    const token = req.tokenPayload; // токен, который пришёл от клиента
+
+    if (!token) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'Token not provided.',
+        'UserController'
+      );
+    }
+    this.ok(res, { message: 'Logged out successfully' });
   }
 }
