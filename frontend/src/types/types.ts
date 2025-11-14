@@ -17,7 +17,7 @@ export type City = {
 export type User = {
   name: string;
   avatarUrl: string;
-  type: UserType;
+  userType: UserType;
   email: string;
 };
 

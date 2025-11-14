@@ -16,6 +16,7 @@ import { LoginUserDto } from './dto/login-user.dto.js';
 import { AuthService } from '../auth/auth-service.interface.js';
 import { LoggedUserRdo } from './rdo/logged-user.rdo.js';
 import { AuthMiddleware } from '../../libs/express/middleware/auth.middleware.js';
+import { DEFAULT_AVATAR_FILE_NAME } from './user.constant.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -50,11 +51,10 @@ export class UserController extends BaseController {
       handler: this.checkAuthenticate,
     });
     this.addRoute({
-      path: '/avatar',
+      path: '/:userId/avatar',
       method: HttpMethod.Post,
       handler: this.uploadAvatar,
       middlewares: [
-        new AuthMiddleware(),
         new UploadFileMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'avatar'),
       ]
     });
@@ -112,24 +112,20 @@ export class UserController extends BaseController {
   }
 
   public async uploadAvatar(req: Request, res: Response) {
-    const filename = req.file?.filename;
-    const userId = req.tokenPayload.id;
+    const file = req.file;
+    const userId = req.params.userId;
 
-    if (!filename) {
-      throw new HttpError(
-        StatusCodes.CONFLICT,
-        'File not upload.',
-        'UserController'
-      );
-    }
+    const avatarName = file ? file.filename : DEFAULT_AVATAR_FILE_NAME;
 
-    const user = await this.userService.updateAvatar(userId, filename);
+    const updatedUser = await this.userService.updateAvatar(userId, avatarName);
 
-    this.created(res, { avatarPath: user.avatarPath });
+    this.created(res, {
+      avatarPath: updatedUser.avatarPath
+    });
   }
 
   public async logout(req: Request, res: Response): Promise<void> {
-    const token = req.tokenPayload; // токен, который пришёл от клиента
+    const token = req.tokenPayload;
 
     if (!token) {
       throw new HttpError(

@@ -4,6 +4,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { UserAuth, User, Offer, Comment, CommentAuth, FavoriteAuth, UserRegister, NewOffer } from '../types/types';
 import { ApiRoute, AppRoute, HttpCode } from '../const';
 import { Token } from '../utils';
+import { adaptSignupToServer } from '../adapters/adaptersToClient';
 
 type Extra = {
   api: AxiosInstance;
@@ -22,10 +23,11 @@ export const Action = {
   POST_COMMENT: 'offer/post-comment',
   POST_FAVORITE: 'offer/post-favorite',
   DELETE_FAVORITE: 'offer/delete-favorite',
-  LOGIN_USER: 'user/login',
-  LOGOUT_USER: 'user/logout',
+
+  LOGIN_USER: 'users/login',
+  LOGOUT_USER: 'users/logout',
   FETCH_USER_STATUS: 'user/fetch-status',
-  REGISTER_USER: 'user/register',
+  REGISTER_USER: 'users/register',
 };
 
 export const fetchOffers = createAsyncThunk<Offer[], undefined, { extra: Extra }>(
@@ -149,25 +151,23 @@ export const logoutUser = createAsyncThunk<void, undefined, { extra: Extra }>(
   Action.LOGOUT_USER,
   async (_, { extra }) => {
     const { api } = extra;
-    await api.delete(ApiRoute.Logout);
+    await api.post(ApiRoute.Logout);
 
     Token.drop();
   });
 
 export const registerUser = createAsyncThunk<void, UserRegister, { extra: Extra }>(
   Action.REGISTER_USER,
-  async ({ email, password, name, avatar, type }, { extra }) => {
+  async (userData, { extra }) => {
     const { api, history } = extra;
-    const { data } = await api.post<{ id: string }>(ApiRoute.Register, {
-      email,
-      password,
-      name,
-      type,
-    });
-    if (avatar) {
+
+    const createdUser = await api.post<{ id: string }>(ApiRoute.Register, adaptSignupToServer(userData));
+    const userId = createdUser.data.id;
+
+    if (userData.avatar) {
       const payload = new FormData();
-      payload.append('avatar', avatar);
-      await api.post(`/${data.id}${ApiRoute.Avatar}`, payload, {
+      payload.append('avatar', userData.avatar);
+      await api.post(`/users/${userId}${ApiRoute.Avatar}`, payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     }
