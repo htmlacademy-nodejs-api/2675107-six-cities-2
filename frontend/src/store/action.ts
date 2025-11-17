@@ -4,7 +4,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { UserAuth, User, Offer, Comment, CommentAuth, FavoriteAuth, UserRegister, NewOffer } from '../types/types';
 import { ApiRoute, AppRoute, HttpCode } from '../const';
 import { Token } from '../utils';
-import { adaptSignupToServer } from '../adapters/adaptersToClient';
+import { adaptCreateOfferToServer, adaptOffer, adaptSignupToServer } from '../adapters/adaptersToServer';
 
 type Extra = {
   api: AxiosInstance;
@@ -35,7 +35,9 @@ export const fetchOffers = createAsyncThunk<Offer[], undefined, { extra: Extra }
   async (_, { extra }) => {
     const { api } = extra;
     const { data } = await api.get<Offer[]>(ApiRoute.Offers);
-
+    const adapted = data.map(adaptOffer);
+    console.log(data);
+    console.log(adapted);
     return data;
   });
 
@@ -72,7 +74,7 @@ export const postOffer = createAsyncThunk<Offer, NewOffer, { extra: Extra }>(
   Action.POST_OFFER,
   async (newOffer, { extra }) => {
     const { api, history } = extra;
-    const { data } = await api.post<Offer>(ApiRoute.Offers, newOffer);
+    const { data } = await api.post<Offer>(ApiRoute.Offers, adaptCreateOfferToServer(newOffer));
     history.push(`${AppRoute.Property}/${data.id}`);
 
     return data;
@@ -109,7 +111,7 @@ export const fetchComments = createAsyncThunk<Comment[], Offer['id'], { extra: E
   Action.FETCH_COMMENTS,
   async (id, { extra }) => {
     const { api } = extra;
-    const { data } = await api.get<Comment[]>(`${ApiRoute.Offers}/${id}${ApiRoute.Comments}`);
+    const { data } = await api.get<Comment[]>(`${ApiRoute.Comments}/${id}`);
 
     return data;
   });

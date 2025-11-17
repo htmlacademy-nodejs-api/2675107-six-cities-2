@@ -1,7 +1,9 @@
-import { CITIES, Sorting, TYPES, UserType } from '../const';
+import { CITIES, GOODS, Sorting, TYPES, UserType } from '../const';
 
 export type CityName = typeof CITIES[number];
 export type Type = typeof TYPES[number];
+export type Goods = typeof GOODS[number];
+
 export type SortName = keyof typeof Sorting;
 
 export type Location = {
@@ -42,7 +44,7 @@ export type Offer = {
   type: Type;
   bedrooms: number;
   description: string;
-  goods: string[];
+  goods: Goods[];
   host: User;
   images: string[];
   maxAdults: number;
@@ -52,15 +54,15 @@ export type NewOffer = {
   title: string;
   description: string;
   city: City;
-  previewImage: string;
+  previewImage?: string;
   isPremium: boolean;
   type: Type;
   bedrooms: number;
   maxAdults: number;
   price: number;
-  goods: string[];
+  goods: Goods[];
   location: Location;
-  images: string[];
+  images?: string[];
 };
 
 export type NewComment = Pick<Comment, 'comment' | 'rating'>;

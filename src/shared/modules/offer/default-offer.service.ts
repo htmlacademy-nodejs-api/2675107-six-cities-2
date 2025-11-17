@@ -36,17 +36,27 @@ export class DefaultOfferService implements OfferService {
 
     const result = await this.offerModel.create(offerData);
 
-    this.logger.info(`New offer created: ${dto.title}`);
+    await result.populate('userId');
+
+    this.logger.info(`New offer created: ${result}`);
     return result;
   }
 
-  public async findById(offerId: string, userId?: string): Promise<DocumentType<OfferEntity>> {
-
+  public async findById(offerId: string, currentUserId?: string): Promise<DocumentType<OfferEntity> | null> {
     const pipeline: PipelineStage[] = [
-      { $match: { _id: new Types.ObjectId(offerId) } }
+      { $match: { _id: new Types.ObjectId(offerId) } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' }
     ];
 
-    if (userId) {
+    if (currentUserId) {
       pipeline.push(
         {
           $lookup: {
@@ -58,7 +68,7 @@ export class DefaultOfferService implements OfferService {
                   $expr: {
                     $and: [
                       { $eq: ['$offerId', '$$offerId'] },
-                      { $eq: ['$userId', new Types.ObjectId(userId)] }
+                      { $eq: ['$userId', new Types.ObjectId(currentUserId)] }
                     ]
                   }
                 }
@@ -72,19 +82,36 @@ export class DefaultOfferService implements OfferService {
             isFavorite: { $gt: [{ $size: '$favoriteInfo' }, 0] }
           }
         },
-        {
-          $project: { favoriteInfo: 0 }
-        }
+        { $project: { favoriteInfo: 0 } }
       );
     }
 
     const result = await this.offerModel.aggregate(pipeline).exec();
-
     const offer = result[0];
 
-    this.logger.info(`Offer ${offer.title} show`);
-    return offer;
+    if (!offer) {
+      return null;
+    }
+
+    const formattedOffer = {
+      ...offer,
+      id: offer._id.toString(),
+      userId: {
+        id: offer.user._id.toString(),
+        firstname: offer.user.firstname,
+        email: offer.user.email,
+        avatarPath: offer.user.avatarPath,
+        userType: offer.user.userType,
+      },
+    };
+
+    delete formattedOffer.user;
+
+    this.logger.info(`Offer ${formattedOffer.title} show`);
+
+    return formattedOffer;
   }
+
 
   public async find(limit?: number, page?: number, userId?: string): Promise<DocumentType<OfferEntity>[]> {
     const defaultLimit = 60;

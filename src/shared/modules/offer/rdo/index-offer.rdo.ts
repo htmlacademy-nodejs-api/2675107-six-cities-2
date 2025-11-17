@@ -2,6 +2,9 @@ import { Expose } from 'class-transformer';
 
 export class OfferRdo {
 
+  @Expose({ name: '_id' })
+  public id: string;
+
   @Expose()
   public title: string;
 
@@ -28,6 +31,9 @@ export class OfferRdo {
 
   @Expose()
   public commentsCount: number;
+
+  @Expose()
+  public coordinates: object;
 
   @Expose()
   public isFavorite?: boolean;

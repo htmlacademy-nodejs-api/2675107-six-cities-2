@@ -17,7 +17,7 @@ export const GOODS = [
   'Washer',
   'Towels',
   'Fridge',
-];
+] as const;
 
 export const STARS_COUNT = 5;
 export const MAX_PERCENT_STARS_WIDTH = 100;
@@ -35,7 +35,7 @@ export enum AppRoute {
   Login = '/login',
   Register = '/register',
   Favorites = '/favorites',
-  Property = '/offer',
+  Property = '/offers',
   Add = '/add',
   Edit = '/edit',
   NotFound = '/404',
@@ -48,7 +48,7 @@ export enum ApiRoute {
   Register = 'users/register',
   Avatar = '/avatar',
   Comments = '/comments',
-  Favorite = '/favorites',
+  Favorite = '/offers/favorite',
   Premium = '/premium',
 }
 
