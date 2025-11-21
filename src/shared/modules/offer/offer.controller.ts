@@ -158,7 +158,7 @@ export class OfferController extends BaseController {
     const userId = tokenPayload.id;
 
     const result = await this.offerService.create(body, userId);
-    this.created(res, result.toObject());
+    this.created(res, fillDTO(OfferRdo, result));
   }
 
   public async show(

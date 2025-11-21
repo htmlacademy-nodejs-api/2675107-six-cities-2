@@ -1,6 +1,9 @@
 import { Expose } from 'class-transformer';
+import { UserRdo } from '../../user/rdo/user.rdo.js';
 
 export class ShowOfferRdo {
+  @Expose({ name: '_id' })
+  public id: string;
 
   @Expose()
   public title: string;
@@ -40,4 +43,7 @@ export class ShowOfferRdo {
 
   @Expose()
   public isFavorite?: boolean;
+
+  @Expose()
+  public userId: UserRdo;
 }
