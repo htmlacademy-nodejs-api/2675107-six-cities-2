@@ -87,8 +87,8 @@ export class DefaultOfferService implements OfferService {
   }
 
   public async find(limit?: number, page?: number, userId?: string): Promise<DocumentType<OfferEntity>[]> {
-    const defaultLimit = 60;
-    const finalLimit = limit && limit > 0 ? limit : defaultLimit;
+    const DEFAULT_LIMIT = 60;
+    const finalLimit = limit && limit > 0 ? limit : DEFAULT_LIMIT;
 
     const finalPage = page && page > 0 ? page : 1;
     const skip = (finalPage - 1) * finalLimit;

@@ -7,7 +7,7 @@ import { Logger } from '../../libs/logger/index.js';
 import { UserEntity } from '../user/index.js';
 import { TokenPayload } from './types/TokenPayload.js';
 import { Config, RestSchema } from '../../libs/config/index.js';
-import { JWT_ALGORITHM, JWT_EXPIRED } from './auth.constant.js';
+import { JWT } from './auth.constant.js';
 import { UserService } from '../user/user-service.interface.js';
 import { LoginUserDto } from '../user/dto/login-user.dto.js';
 import { UserNotFoundException } from './errors/user-not-found.exception.js';
@@ -32,9 +32,9 @@ export class DefaultAuthService implements AuthService {
 
     this.logger.info(`Create token for ${user.email}`);
     return new SignJWT(tokenPayload)
-      .setProtectedHeader({ alg: JWT_ALGORITHM })
+      .setProtectedHeader({ alg: JWT.ALGORITHM})
       .setIssuedAt()
-      .setExpirationTime(JWT_EXPIRED)
+      .setExpirationTime(JWT.EXPIRED)
       .sign(secretKey);
   }
 
