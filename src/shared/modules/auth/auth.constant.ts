@@ -1,2 +1,4 @@
-export const JWT_ALGORITHM = 'HS256';
-export const JWT_EXPIRED = '2d';
+export enum JWT {
+  ALGORITHM = 'HS256',
+  EXPIRED = '2d',
+}
